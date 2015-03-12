@@ -45,20 +45,7 @@ if(!exists("StormData")) {
 rm(link, link_doc1, link_doc2)
 ```
 
-##analysis of the dataset
 
-EVTYPE.txt is a list of the EVTTYPE taken from the documentation downloaded as StormDataDoc.pdf (p.6, table 1. Storm Data Event Table)
-```{r Analysis of the dataset, cache=TRUE}
-evtype_doc <- scan("./raw_data/EVTYPE.txt", what = "", sep = "\n")#read the lisst
-evtype_doc <- substr(evtype_doc, 1, nchar(evtype_doc) - 2)#remove the character "designator"
-evtype_data <- levels(df$EVTYPE)
-cbind(EVTYPE.DOCUMENTATION = length(evtype_doc), EVTYPE.DATA = length(levels(df$EVTYPE)))
-print(evtype_doc)
-print(evtype_data)
-#cleaning EVTYPE
-
-
-```
 ##Pre-processing
 Check the headings of the original dataset
 ```{r Headings of the dataset}
@@ -79,3 +66,50 @@ df <- with(StormData,
                       remarks = REMARKS)
            )
 ```
+
+##analysis of the dataset
+
+EVTYPE.txt is a list of the EVTTYPE taken from the documentation downloaded as StormDataDoc.pdf (p.6, table 1. Storm Data Event Table)
+```{r Analysis of the dataset, cache=TRUE}
+evtype_doc <- scan("./raw_data/EVTYPE.txt", what = "", sep = "\n")#read the list
+evtype_doc <- substr(evtype_doc, 1, nchar(evtype_doc) - 2)#remove the character "designator"
+evtype_data <- as.character(levels(df$evtype))
+```
+The difference between EVTYPE's categories of the documentation and the data
+```{r}
+cbind(EVTYPE.DOCUMENTATION = length(evtype_doc), EVTYPE.DATA = length(levels(df$evtype)))
+print(evtype_doc)
+print(evtype_data)
+#cleaning EVTYPE
+
+```
+
+```{r}
+#conditions
+passage_num1 <- gsub("/|\\(|\\)"," ",evtype_doc)
+passage_num1 <- data.frame(grep = passage_num1, output = passage_num1)
+#cleaning function
+clean_evtype <- function(subject = "evtype_data", passage_num = 1){
+      evtype_clean <- data.frame(evtype_data, stringsAsFactors = FALSE)
+      for(j in 1:passage_num){
+            cond_title <- paste("passage_num", j, "_output", sep = "")
+            evtype_clean[ , cond_title] <- NA #add output column
+            cond <- get(paste("passage_num", j, sep = ""), envir = .GlobalEnv)
+            cond <- data.frame(grep = as.character(cond$grep), 
+                               output = as.character(cond$output), stringsAsFactors = FALSE)
+            for(i in 1:length(cond$grep)) {
+                  index <- grep(cond$grep[i], evtype_clean$evtype, ignore.case = TRUE)
+                  evtype_clean[index, cond_title] <- cond$output[i]
+                  }
+            }
+      evtype_clean <<- evtype_clean
+      }
+clean_evtype(passage_num = 1)
+
+```
+The first passage gives these results 
+```{r}
+print(evtype_clean)
+```
+Second passage
+```{r}
