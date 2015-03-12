@@ -89,31 +89,33 @@ print(evtype_data)
 passage_num1 <- gsub("/|\\(|\\)"," ",evtype_doc)
 passage_num1 <- data.frame(grep = passage_num1, output = passage_num1)
 #cleaning function
-clean_evtype <- function(subject = "evtype_data", passage_num = 1){
+clean_evtype <- function(subject = "evtype_data", passage_num = 1) {
       evtype_clean <- data.frame(evtype_data, stringsAsFactors = FALSE)
-      for(j in 1:passage_num){
+      for(j in 1:passage_num) {
             cond_title <- paste("passage_num", j, "_output", sep = "")
-            evtype_clean[ , cond?_title] <- NA #add output column
+            evtype_clean[ , cond_title] <- NA #add output column
             cond <- get(paste("passage_num", j, sep = ""), envir = .GlobalEnv)
             cond <- data.frame(grep = as.character(cond$grep), 
                                output = as.character(cond$output), stringsAsFactors = FALSE)
             for(i in 1:length(cond$grep)) {
                   index <- grep(cond$grep[i], evtype_clean$evtype, ignore.case = TRUE)
-                  if(j > 1) {
-                        cond_title_previous <- paste("passage_num", j - 1, "_output", sep = "")
-                        if(is.na(evtype_clean[index, cond_title_previous])) {
-                              evtype_clean[index, cond_title] <- cond$output[i]
+                  if(!length(index >= 1)) {
+                  for(z in 1:length(index)) {
+                        if(j == 1) evtype_clean[index[z], cond_title] <- cond$output[i]
+                        else { 
+                              cond_title_previous <- paste("passage_num", j - 1, "_output", sep = "")
+                              if(is.na(evtype_clean[index[z], cond_title_previous])){
+                                    
+                                    evtype_clean[index[z], cond_title] <- cond$output[i]}
                               }
                         }
-                  else {
-                        evtype_clean[index, 
-                                     cond_title] <- evtype_clean[index, 
-                                                                 cond_title_previous]
-                        }
+                   }
+                  
                   }
             }
       evtype_clean <<- evtype_clean
       }
+
 clean_evtype(passage_num = 1)
 
 ```
