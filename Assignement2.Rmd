@@ -52,23 +52,12 @@ EVTYPE.txt is a list of the EVTTYPE taken from the documentation downloaded as S
 evtype_doc <- scan("./raw_data/EVTYPE.txt", what = "", sep = "\n")#read the lisst
 evtype_doc <- substr(evtype_doc, 1, nchar(evtype_doc) - 2)#remove the character "designator"
 evtype_data <- levels(df$EVTYPE)
-cbind(EVTYPE.DOCUMENTATION = length(categories), EVTYPE.DATA = length(levels(df$EVTYPE)))
+cbind(EVTYPE.DOCUMENTATION = length(evtype_doc), EVTYPE.DATA = length(levels(df$EVTYPE)))
 print(evtype_doc)
 print(evtype_data)
 #cleaning EVTYPE
-#let's start with the levels "summary"
-#read the remarks
-row_summary <- grep("Summary" ,df$evtype, ignore.case = TRUE)
-df[row_summary,]
-dates_summary <- df[0,] 
-for(i in 1:length(row_summary)){
-      ymin <- min(year(df$bgn_date[row_summary]))
-      ymax <- max(year(df$bgn_date[row_summary]))
-      index <- grep(df$bgn_date[row_summary[i]], 
-                    df$bgn_date[year(df$bgn_date) > 1995] & 
-                                      df$bgn_date[year(df$bgn_date) > 1998])
-      rbind(dates_summary, df[index, ])
-} 
+
+
 ```
 ##Pre-processing
 Check the headings of the original dataset
