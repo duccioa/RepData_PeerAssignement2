@@ -98,22 +98,12 @@ clean_evtype <- function(subject = "evtype_data", passage_num = 1) {
             cond <- get(paste("passage_num", j, sep = ""), envir = .GlobalEnv)
             cond <- data.frame(grep = as.character(cond$grep), 
                                output = as.character(cond$output), stringsAsFactors = FALSE)
-            ifelse(j == 1, evtype_clean[ , cond_title] <- NA, evtype_clean[ , cond_title] <- evtype_clean[ , cond_title_previous])
+            evtype_clean[ , cond_title] <- NA
             for(i in 1:length(cond$grep)) {
                   index <- grep(cond$grep[i], evtype_clean$evtype, ignore.case = TRUE)
                   if(length(index > 0)) {
-                  for(z in 1:length(index)) {
-                        if(j == 1) {
-                              
-                              evtype_clean[index[z], cond_title] <- cond$output[i]
-                              }
-                        else { 
-                              
-                              
-                              if(is.na(evtype_clean[index[z], cond_title_previous])){
-                                    
-                                    evtype_clean[index[z], cond_title] <- cond$output[i]}
-                              }
+                  for(z in 1:length(index)) { evtype_clean[index[z], cond_title] <- cond$output[i]                    
+                        
                         }
                    }
                   
