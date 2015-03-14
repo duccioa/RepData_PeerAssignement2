@@ -65,7 +65,7 @@ date &lt;- date()
 ##create directory for raw data
 if(!file.exists(&quot;./raw_data&quot;)) {
       dir.create(&quot;./raw_data&quot;)
-}
+      }
 ##download data and create log file of the download
 if(!file.exists(&quot;./raw_data/StormData.csv.bz2&quot;)) {
       link &lt;- &quot;https://d396qusza40orc.cloudfront.net/repdata%2Fdata%2FStormData.csv.bz2&quot;
@@ -76,24 +76,24 @@ if(!file.exists(&quot;./raw_data/StormData.csv.bz2&quot;)) {
                     &quot;./raw_data/StormData.csv.bz2&quot;, 
                     method = &quot;curl&quot;)
       rm(date, link, log)
-}
+      }
 ##download documentation
 if(!file.exists(&quot;./raw_data/StormDataDoc.pdf&quot;)) {
       download.file(link_doc1, 
                     &quot;./raw_data/StormDataDoc.pdf&quot;, 
                     method = &quot;curl&quot;)
-}
+      }
 if(!file.exists(&quot;./raw_data/StormDataFAQ.pdf&quot;)) {
       download.file(link_doc2, 
                     &quot;./raw_data/StormDataFAQ.pdf&quot;, 
                     method = &quot;curl&quot;)
-}</code></pre>
+      }</code></pre>
 </div>
 <div id="read-the-data" class="section level2">
 <h2>read the data</h2>
 <pre class="r"><code>if(!exists(&quot;StormData&quot;)) {
       StormData &lt;- read.csv(bzfile(&quot;./raw_data/StormData.csv.bz2&quot;), stringsAsFactors = FALSE, header = TRUE)
-}
+      }
 
 rm(link, link_doc1, link_doc2)</code></pre>
 <pre><code>## Warning in rm(link, link_doc1, link_doc2): object 'link' not found</code></pre>
@@ -657,23 +657,42 @@ evtype_data &lt;- as.character(levels(df$evtype))</code></pre>
 <pre class="r"><code>#conditions
 passage_num1 &lt;- gsub(&quot;/|\\(|\\)&quot;,&quot; &quot;,evtype_doc)
 passage_num1 &lt;- data.frame(grep = passage_num1, output = passage_num1)
+passage_num2 &lt;- read.csv(&quot;passage_num2.csv&quot;, stringsAsFactors = FALSE, header = TRUE, sep = &quot;;&quot;)
 #cleaning function
-clean_evtype &lt;- function(subject = &quot;evtype_data&quot;, passage_num = 1){
+clean_evtype &lt;- function(subject = &quot;evtype_data&quot;, passage_num = 1) {
       evtype_clean &lt;- data.frame(evtype_data, stringsAsFactors = FALSE)
-      for(j in 1:passage_num){
+      for(j in 1:passage_num) {
             cond_title &lt;- paste(&quot;passage_num&quot;, j, &quot;_output&quot;, sep = &quot;&quot;)
-            evtype_clean[ , cond_title] &lt;- NA #add output column
+            cond_title_previous &lt;- paste(&quot;passage_num&quot;, j - 1, &quot;_output&quot;, sep = &quot;&quot;)
             cond &lt;- get(paste(&quot;passage_num&quot;, j, sep = &quot;&quot;), envir = .GlobalEnv)
             cond &lt;- data.frame(grep = as.character(cond$grep), 
                                output = as.character(cond$output), stringsAsFactors = FALSE)
+            ifelse(j == 1, evtype_clean[ , cond_title] &lt;- NA, evtype_clean[ , cond_title] &lt;- evtype_clean[ , cond_title_previous])
             for(i in 1:length(cond$grep)) {
                   index &lt;- grep(cond$grep[i], evtype_clean$evtype, ignore.case = TRUE)
-                  evtype_clean[index, cond_title] &lt;- cond$output[i]
+                  if(length(index &gt; 0)) {
+                  for(z in 1:length(index)) {
+                        if(j == 1) {
+                              
+                              evtype_clean[index[z], cond_title] &lt;- cond$output[i]
+                              }
+                        else { 
+                              
+                              
+                              if(is.na(evtype_clean[index[z], cond_title_previous])){
+                                    
+                                    evtype_clean[index[z], cond_title] &lt;- cond$output[i]}
+                              }
+                        }
+                   }
+                  
                   }
             }
       evtype_clean &lt;&lt;- evtype_clean
       }
-clean_evtype(passage_num = 1)</code></pre>
+
+clean_evtype(passage_num = 1)
+clean_evtype(passage_num = 2)</code></pre>
 <p>The first passage gives these results</p>
 <pre class="r"><code>print(evtype_clean)</code></pre>
 <pre><code>##                        evtype_data   passage_num1_output
@@ -1661,7 +1680,994 @@ clean_evtype(passage_num = 1)</code></pre>
 ## 982               coastal flooding                 Flood
 ## 983                  gradient wind                  &lt;NA&gt;
 ## 984                     small hail                  Hail
-## 985                  wet micoburst                  &lt;NA&gt;</code></pre>
+## 985                  wet micoburst                  &lt;NA&gt;
+##       passage_num2_output
+## 1               High Surf
+## 2                   Flood
+## 3                   Flood
+## 4               Lightning
+## 5       Thunderstorm Wind
+## 6       Thunderstorm Wind
+## 7              Waterspout
+## 8         Cold/Wind Chill
+## 9                    &lt;NA&gt;
+## 10                   Heat
+## 11                Drought
+## 12                   &lt;NA&gt;
+## 13             Heavy Snow
+## 14           Frost/Freeze
+## 15                   &lt;NA&gt;
+## 16       Storm Surge/Tide
+## 17  Astronomical Low Tide
+## 18                   &lt;NA&gt;
+## 19              Avalanche
+## 20          Coastal Flood
+## 21          Coastal Flood
+## 22                  Flood
+## 23                  Flood
+## 24             Heavy Rain
+## 25        Cold/Wind Chill
+## 26        Cold/Wind Chill
+## 27           Frost/Freeze
+## 28               Blizzard
+## 29               Blizzard
+## 30             Heavy Snow
+## 31               Blizzard
+## 32               Blizzard
+## 33             Heavy Snow
+## 34              High Wind
+## 35           Winter Storm
+## 36       Storm Surge/Tide
+## 37       Storm Surge/Tide
+## 38                   &lt;NA&gt;
+## 39             Heavy Snow
+## 40             Heavy Snow
+## 41             Heavy Snow
+## 42             Heavy Snow
+## 43                  Flood
+## 44               Wildfire
+## 45               Wildfire
+## 46          Coastal Flood
+## 47           Frost/Freeze
+## 48               Blizzard
+## 49             Heavy Snow
+## 50                  Flood
+## 51          Coastal Flood
+## 52                  Flood
+## 53                  Flood
+## 54                  Flood
+## 55     Marine Strong Wind
+## 56                   &lt;NA&gt;
+## 57                  Flood
+## 58                  Flood
+## 59     Marine Strong Wind
+## 60           Frost/Freeze
+## 61           Frost/Freeze
+## 62           Frost/Freeze
+## 63                Tornado
+## 64           Frost/Freeze
+## 65           Frost/Freeze
+## 66           Frost/Freeze
+## 67           Frost/Freeze
+## 68           Frost/Freeze
+## 69           Frost/Freeze
+## 70        Cold Wind Chill
+## 71        Cold/Wind Chill
+## 72           Frost/Freeze
+## 73           Frost/Freeze
+## 74           Frost/Freeze
+## 75                  Flood
+## 76                  Flood
+## 77                  Flood
+## 78     Marine Strong Wind
+## 79           Frost/Freeze
+## 80           Frost/Freeze
+## 81           Frost/Freeze
+## 82                   &lt;NA&gt;
+## 83                   &lt;NA&gt;
+## 84           Frost/Freeze
+## 85                   Hail
+## 86              Dense Fog
+## 87            Dense Smoke
+## 88                   &lt;NA&gt;
+## 89        Cold/Wind Chill
+## 90                Drought
+## 91                Drought
+## 92                   Heat
+## 93                   &lt;NA&gt;
+## 94                Drought
+## 95                Drought
+## 96                Drought
+## 97                Drought
+## 98                Drought
+## 99                Drought
+## 100               Drought
+## 101               Drought
+## 102               Drought
+## 103               Drought
+## 104               Drought
+## 105               Drought
+## 106               Drought
+## 107               Drought
+## 108               Drought
+## 109            Dust Storm
+## 110            Dust Devil
+## 111            Waterspout
+## 112            Dust Storm
+## 113             High Wind
+## 114                  &lt;NA&gt;
+## 115          Frost/Freeze
+## 116            Heavy Snow
+## 117            Dust Devil
+## 118          Frost/Freeze
+## 119          Frost/Freeze
+## 120                  &lt;NA&gt;
+## 121            Heavy Snow
+## 122            Heavy Snow
+## 123                  &lt;NA&gt;
+## 124                  Heat
+## 125                  Heat
+## 126            Heavy Rain
+## 127                  &lt;NA&gt;
+## 128            Heavy Rain
+## 129            Heavy Snow
+## 130                  &lt;NA&gt;
+## 131               Drought
+## 132          Frost/Freeze
+## 133       Cold/Wind Chill
+## 134                  Heat
+## 135       Cold/Wind Chill
+## 136       Cold/Wind Chill
+## 137       Cold/Wind Chill
+## 138       Cold/Wind Chill
+## 139       Cold/Wind Chill
+## 140          Frost/Freeze
+## 141                  &lt;NA&gt;
+## 142          Frost/Freeze
+## 143            Heavy Snow
+## 144                 Flood
+## 145          Frost/Freeze
+## 146          Frost/Freeze
+## 147          Frost/Freeze
+## 148          Frost/Freeze
+## 149          Frost/Freeze
+## 150            Heavy Snow
+## 151                 Flood
+## 152            Heavy Rain
+## 153                 Flood
+## 154                 Flood
+## 155                 Flood
+## 156                 Flood
+## 157                 Flood
+## 158                 Flood
+## 159                 Flood
+## 160            Heavy Rain
+## 161                 Flood
+## 162                 Flood
+## 163                 Flood
+## 164                 Flood
+## 165                 Flood
+## 166           Flash Flood
+## 167                 Flood
+## 168            Heavy Rain
+## 169                 Flood
+## 170                 Flood
+## 171                 Flood
+## 172                 Flood
+## 173                 Flood
+## 174                 Flood
+## 175                 Flood
+## 176                 Flood
+## 177                 Flood
+## 178                 Flood
+## 179                 Flood
+## 180                 Flood
+## 181            Heavy Rain
+## 182                 Flood
+## 183             Dense Fog
+## 184             Dense Fog
+## 185              Wildfire
+## 186          Frost/Freeze
+## 187                  &lt;NA&gt;
+## 188                  &lt;NA&gt;
+## 189          Freezing Fog
+## 190                  &lt;NA&gt;
+## 191                 Sleet
+## 192            Heavy Snow
+## 193                 Sleet
+## 194                 Sleet
+## 195                 Sleet
+## 196            Heavy Snow
+## 197          Frost/Freeze
+## 198          Frost/Freeze
+## 199          Frost/Freeze
+## 200                  &lt;NA&gt;
+## 201          Funnel Cloud
+## 202          Funnel Cloud
+## 203                  Hail
+## 204          Funnel Cloud
+## 205                  &lt;NA&gt;
+## 206                 Flood
+## 207                 Flood
+## 208           Strong Wind
+## 209          Frost/Freeze
+## 210                  &lt;NA&gt;
+## 211          Freezing Fog
+## 212                  &lt;NA&gt;
+## 213                  &lt;NA&gt;
+## 214                  &lt;NA&gt;
+## 215                  &lt;NA&gt;
+## 216          Frost/Freeze
+## 217          Frost/Freeze
+## 218          Funnel Cloud
+## 219          Frost/Freeze
+## 220          Frost/Freeze
+## 221             Ice Storm
+## 222       Cold/Wind Chill
+## 223       Cold/Wind Chill
+## 224              Wildfire
+## 225              Blizzard
+## 226               Tornado
+## 227               Tornado
+## 228       Cold/Wind Chill
+## 229     Thunderstorm Wind
+## 230     Thunderstorm Wind
+## 231       Cold/Wind Chill
+## 232                  Hail
+## 233       Cold/Wind Chill
+## 234       Cold/Wind Chill
+## 235          Frost/Freeze
+## 236       Cold/Wind Chill
+## 237       Cold/Wind Chill
+## 238       Cold/Wind Chill
+## 239       Cold/Wind Chill
+## 240       Cold/Wind Chill
+## 241                  Hail
+## 242                  Hail
+## 243                  Hail
+## 244                  Hail
+## 245                  Hail
+## 246                  Hail
+## 247                  Hail
+## 248                  Hail
+## 249                  Hail
+## 250                  Hail
+## 251                  Hail
+## 252                  Hail
+## 253                  Hail
+## 254                  Hail
+## 255                  Hail
+## 256                  Hail
+## 257                  Hail
+## 258                  Hail
+## 259                  Hail
+## 260                  Hail
+## 261                  Hail
+## 262                  Hail
+## 263                  Hail
+## 264                  Hail
+## 265                  Hail
+## 266                  Hail
+## 267                  Hail
+## 268                  Hail
+## 269          Frost/Freeze
+## 270             High Surf
+## 271                  Heat
+## 272                  Heat
+## 273                  Heat
+## 274                  Heat
+## 275                  Heat
+## 276                  Heat
+## 277            Heavy Snow
+## 278                  &lt;NA&gt;
+## 279            Heavy Rain
+## 280            Heavy Rain
+## 281            Heavy Rain
+## 282            Heavy Rain
+## 283            Heavy Rain
+## 284            Heavy Rain
+## 285             Lightning
+## 286            Heavy Rain
+## 287            Heavy Rain
+## 288            Heavy Rain
+## 289            Heavy Rain
+## 290            Heavy Rain
+## 291            Heavy Rain
+## 292            Heavy Rain
+## 293            Heavy Rain
+## 294            Heavy Rain
+## 295            Heavy Rain
+## 296                  &lt;NA&gt;
+## 297            Heavy Rain
+## 298            Heavy Rain
+## 299            Heavy Snow
+## 300            Heavy Snow
+## 301            Heavy Snow
+## 302            Heavy Snow
+## 303             High Wind
+## 304            Heavy Snow
+## 305             Ice Storm
+## 306           Strong Wind
+## 307            Heavy Snow
+## 308            Heavy Snow
+## 309            Heavy Snow
+## 310            Heavy Snow
+## 311            Heavy Snow
+## 312            Heavy Snow
+## 313            Heavy Snow
+## 314            Heavy Snow
+## 315             High Wind
+## 316             High Wind
+## 317             High Wind
+## 318             High Wind
+## 319            Heavy Snow
+## 320             Ice Storm
+## 321                 Sleet
+## 322            Heavy Snow
+## 323            Heavy Snow
+## 324          Winter Storm
+## 325            Heavy Snow
+## 326             High Surf
+## 327                 Flood
+## 328             High Surf
+## 329                  &lt;NA&gt;
+## 330            Heavy Snow
+## 331                  &lt;NA&gt;
+## 332                  &lt;NA&gt;
+## 333       Cold/Wind Chill
+## 334                  &lt;NA&gt;
+## 335             High Surf
+## 336             High Surf
+## 337             High Surf
+## 338                  &lt;NA&gt;
+## 339                  &lt;NA&gt;
+## 340      Storm Surge/Tide
+## 341                  &lt;NA&gt;
+## 342                  &lt;NA&gt;
+## 343             High Wind
+## 344             High Wind
+## 345             High Wind
+## 346             High Wind
+## 347             High Wind
+## 348             High Wind
+## 349             High Wind
+## 350             High Wind
+## 351             High Wind
+## 352             High Wind
+## 353             High Wind
+## 354             High Wind
+## 355             High Wind
+## 356             High Wind
+## 357             High Wind
+## 358             High Wind
+## 359             High Wind
+## 360             High Wind
+## 361             High Wind
+## 362             High Wind
+## 363             High Wind
+## 364             High Wind
+## 365             High Wind
+## 366             High Wind
+## 367             High Wind
+## 368             High Wind
+## 369             High Wind
+## 370             High Wind
+## 371             High Wind
+## 372             High Wind
+## 373             High Wind
+## 374             High Wind
+## 375             High Wind
+## 376             High Wind
+## 377             High Wind
+## 378             High Wind
+## 379             High Wind
+## 380                 Flood
+## 381                  Heat
+## 382                  Heat
+## 383                  Heat
+## 384               Drought
+## 385   Hurricane (Typhoon)
+## 386   Hurricane (Typhoon)
+## 387   Hurricane (Typhoon)
+## 388   Hurricane (Typhoon)
+## 389   Hurricane (Typhoon)
+## 390   Hurricane (Typhoon)
+## 391             High Wind
+## 392   Hurricane (Typhoon)
+## 393   Hurricane (Typhoon)
+## 394                  &lt;NA&gt;
+## 395                  &lt;NA&gt;
+## 396                  &lt;NA&gt;
+## 397                  &lt;NA&gt;
+## 398                  Hail
+## 399                  Heat
+## 400                  Heat
+## 401            Heavy Rain
+## 402            Heavy Rain
+## 403            Heavy Rain
+## 404             High Surf
+## 405             High Surf
+## 406            Heavy Rain
+## 407            Heavy Snow
+## 408             High Surf
+## 409             High Surf
+## 410             High Wind
+## 411               Drought
+## 412   Hurricane (Typhoon)
+## 413                  &lt;NA&gt;
+## 414          Frost/Freeze
+## 415          Frost/Freeze
+## 416          Frost/Freeze
+## 417          Frost/Freeze
+## 418                 Flood
+## 419          Frost/Freeze
+## 420          Frost/Freeze
+## 421          Frost/Freeze
+## 422             Ice Storm
+## 423             Ice Storm
+## 424             Ice Storm
+## 425          Frost/Freeze
+## 426           Strong Wind
+## 427                  &lt;NA&gt;
+## 428             Dense Fog
+## 429                 Flood
+## 430          Frost/Freeze
+## 431              Blizzard
+## 432                  &lt;NA&gt;
+## 433            Heavy Snow
+## 434            Heavy Snow
+## 435                 Flood
+## 436      Lake-Effect Snow
+## 437       Lakeshore Flood
+## 438             Avalanche
+## 439                 Flood
+## 440             Avalanche
+## 441             Avalanche
+## 442             Avalanche
+## 443                  &lt;NA&gt;
+## 444          Frost/Freeze
+## 445                  Hail
+## 446            Heavy Snow
+## 447            Heavy Snow
+## 448                  &lt;NA&gt;
+## 449            Heavy Snow
+## 450                 Sleet
+## 451            Heavy Rain
+## 452                  &lt;NA&gt;
+## 453             Lightning
+## 454             Lightning
+## 455             Lightning
+## 456             Lightning
+## 457             Lightning
+## 458             Lightning
+## 459             Lightning
+## 460             Lightning
+## 461     Thunderstorm Wind
+## 462     Thunderstorm Wind
+## 463             Lightning
+## 464             Lightning
+## 465             Lightning
+## 466                 Flood
+## 467                 Flood
+## 468            Heavy Rain
+## 469          Frost/Freeze
+## 470          Frost/Freeze
+## 471       Cold/Wind Chill
+## 472            Heavy Snow
+## 473             Avalanche
+## 474            Heavy Snow
+## 475            Heavy Snow
+## 476            Heavy Snow
+## 477            Heavy Snow
+## 478            Heavy Snow
+## 479            Heavy Snow
+## 480                 Flood
+## 481           Marine Hail
+## 482      Marine High Wind
+## 483                  &lt;NA&gt;
+## 484           Strong Wind
+## 485     Thunderstorm Wind
+## 486     Thunderstorm Wind
+## 487                  &lt;NA&gt;
+## 488       Cold/Wind Chill
+## 489                  &lt;NA&gt;
+## 490               Drought
+## 491                 Flood
+## 492                 Flood
+## 493            Heavy Rain
+## 494            Heavy Rain
+## 495            Heavy Snow
+## 496            Heavy Snow
+## 497            Heavy Rain
+## 498            Heavy Rain
+## 499            Heavy Snow
+## 500                  &lt;NA&gt;
+## 501                  &lt;NA&gt;
+## 502                  &lt;NA&gt;
+## 503                 Flood
+## 504                  &lt;NA&gt;
+## 505           Debris Flow
+## 506           Debris Flow
+## 507           Debris Flow
+## 508                  &lt;NA&gt;
+## 509                  &lt;NA&gt;
+## 510                  &lt;NA&gt;
+## 511               Drought
+## 512                 Flood
+## 513            Heavy Rain
+## 514            Heavy Rain
+## 515            Heavy Snow
+## 516            Heavy Snow
+## 517           Debris Flow
+## 518           Debris Flow
+## 519            Heavy Snow
+## 520                  Hail
+## 521     Thunderstorm Wind
+## 522       Cold/Wind Chill
+## 523     Thunderstorm Wind
+## 524                  &lt;NA&gt;
+## 525            Heavy Rain
+## 526                  &lt;NA&gt;
+## 527                  &lt;NA&gt;
+## 528                  &lt;NA&gt;
+## 529                  &lt;NA&gt;
+## 530             Dense Fog
+## 531          Frost/Freeze
+## 532          Frost/Freeze
+## 533          Frost/Freeze
+## 534                  Heat
+## 535                  &lt;NA&gt;
+## 536          Frost/Freeze
+## 537                  &lt;NA&gt;
+## 538                  &lt;NA&gt;
+## 539       Cold/Wind Chill
+## 540            Heavy Snow
+## 541       Cold/Wind Chill
+## 542            Heavy Rain
+## 543                  &lt;NA&gt;
+## 544          Frost/Freeze
+## 545          Frost/Freeze
+## 546             High Wind
+## 547          Frost/Freeze
+## 548          Frost/Freeze
+## 549               Drought
+## 550                  Heat
+## 551                  Heat
+## 552                  &lt;NA&gt;
+## 553                  &lt;NA&gt;
+## 554                  &lt;NA&gt;
+## 555                  &lt;NA&gt;
+## 556            Heavy Rain
+## 557            Heavy Rain
+## 558            Heavy Rain
+## 559            Heavy Snow
+## 560          Frost/Freeze
+## 561            Heavy Snow
+## 562                  &lt;NA&gt;
+## 563                  &lt;NA&gt;
+## 564                  &lt;NA&gt;
+## 565                  &lt;NA&gt;
+## 566                  Heat
+## 567                  Heat
+## 568            Heavy Rain
+## 569                  &lt;NA&gt;
+## 570              Wildfire
+## 571                  &lt;NA&gt;
+## 572           Rip Current
+## 573           Rip Current
+## 574           Rip Current
+## 575           Rip Current
+## 576                 Flood
+## 577                 Flood
+## 578                 Flood
+## 579                  &lt;NA&gt;
+## 580                  &lt;NA&gt;
+## 581                  &lt;NA&gt;
+## 582                  &lt;NA&gt;
+## 583             High Surf
+## 584                 Flood
+## 585                  &lt;NA&gt;
+## 586          Frost/Freeze
+## 587                  Heat
+## 588                  &lt;NA&gt;
+## 589            Heavy Snow
+## 590                  &lt;NA&gt;
+## 591                  Heat
+## 592            Heavy Snow
+## 593               Drought
+## 594                  &lt;NA&gt;
+## 595                 Flood
+## 596                  &lt;NA&gt;
+## 597                Seiche
+## 598          Frost/Freeze
+## 599     Thunderstorm Wind
+## 600     Thunderstorm Wind
+## 601     Thunderstorm Wind
+## 602                  &lt;NA&gt;
+## 603                 Sleet
+## 604                 Sleet
+## 605                 Sleet
+## 606                 Sleet
+## 607                 Sleet
+## 608                 Sleet
+## 609                 Sleet
+## 610                  Hail
+## 611                 Flood
+## 612                 Flood
+## 613                 Flood
+## 614                 Flood
+## 615                 Flood
+## 616                 Flood
+## 617                 Flood
+## 618                 Flood
+## 619                  &lt;NA&gt;
+## 620            Heavy Snow
+## 621            Heavy Snow
+## 622            Heavy Snow
+## 623          Frost/Freeze
+## 624            Heavy Snow
+## 625          Frost/Freeze
+## 626             Ice Storm
+## 627                 Sleet
+## 628            Heavy Snow
+## 629               Drought
+## 630            Heavy Snow
+## 631            Heavy Rain
+## 632                 Sleet
+## 633            Heavy Snow
+## 634            Heavy Snow
+## 635             High Wind
+## 636          Frost/Freeze
+## 637          Frost/Freeze
+## 638            Heavy Snow
+## 639          Frost/Freeze
+## 640            Heavy Snow
+## 641            Heavy Snow
+## 642             High Wind
+## 643          Frost/Freeze
+## 644             Ice Storm
+## 645            Heavy Snow
+## 646                 Sleet
+## 647                 Sleet
+## 648                 Sleet
+## 649                 Sleet
+## 650            Heavy Snow
+## 651                 Flood
+## 652            Heavy Snow
+## 653          Frost/Freeze
+## 654                  &lt;NA&gt;
+## 655       Cold/Wind Chill
+## 656                  &lt;NA&gt;
+## 657                  &lt;NA&gt;
+## 658                 Flood
+## 659                 Flood
+## 660                 Flood
+## 661           Strong Wind
+## 662           Strong Wind
+## 663           Strong Wind
+## 664                  &lt;NA&gt;
+## 665                  &lt;NA&gt;
+## 666                  &lt;NA&gt;
+## 667                  &lt;NA&gt;
+## 668            Heavy Snow
+## 669                  Hail
+## 670                  &lt;NA&gt;
+## 671            Heavy Snow
+## 672            Heavy Snow
+## 673            Heavy Snow
+## 674          Frost/Freeze
+## 675                 Sleet
+## 676            Heavy Snow
+## 677           Strong Wind
+## 678           Strong Wind
+## 679           Strong Wind
+## 680                  &lt;NA&gt;
+## 681                  &lt;NA&gt;
+## 682                  &lt;NA&gt;
+## 683                  &lt;NA&gt;
+## 684                  &lt;NA&gt;
+## 685                  &lt;NA&gt;
+## 686                  &lt;NA&gt;
+## 687                  &lt;NA&gt;
+## 688                  &lt;NA&gt;
+## 689                  &lt;NA&gt;
+## 690                  &lt;NA&gt;
+## 691                  &lt;NA&gt;
+## 692                  &lt;NA&gt;
+## 693                  &lt;NA&gt;
+## 694                  &lt;NA&gt;
+## 695                  &lt;NA&gt;
+## 696                  &lt;NA&gt;
+## 697                  &lt;NA&gt;
+## 698                  &lt;NA&gt;
+## 699                  &lt;NA&gt;
+## 700                  &lt;NA&gt;
+## 701                  &lt;NA&gt;
+## 702                  &lt;NA&gt;
+## 703                  &lt;NA&gt;
+## 704                  &lt;NA&gt;
+## 705                  &lt;NA&gt;
+## 706                  &lt;NA&gt;
+## 707                  &lt;NA&gt;
+## 708                  &lt;NA&gt;
+## 709                  &lt;NA&gt;
+## 710                  &lt;NA&gt;
+## 711                  &lt;NA&gt;
+## 712                  &lt;NA&gt;
+## 713                  &lt;NA&gt;
+## 714                  &lt;NA&gt;
+## 715                  &lt;NA&gt;
+## 716                  &lt;NA&gt;
+## 717                  &lt;NA&gt;
+## 718                  &lt;NA&gt;
+## 719                  &lt;NA&gt;
+## 720                  &lt;NA&gt;
+## 721                  &lt;NA&gt;
+## 722                  &lt;NA&gt;
+## 723                  &lt;NA&gt;
+## 724                  &lt;NA&gt;
+## 725                  &lt;NA&gt;
+## 726                  &lt;NA&gt;
+## 727                  &lt;NA&gt;
+## 728                  &lt;NA&gt;
+## 729                  &lt;NA&gt;
+## 730                  &lt;NA&gt;
+## 731                  &lt;NA&gt;
+## 732                  &lt;NA&gt;
+## 733                  &lt;NA&gt;
+## 734                  &lt;NA&gt;
+## 735                  &lt;NA&gt;
+## 736                  &lt;NA&gt;
+## 737                  &lt;NA&gt;
+## 738                  &lt;NA&gt;
+## 739                  &lt;NA&gt;
+## 740                  &lt;NA&gt;
+## 741                  &lt;NA&gt;
+## 742                  &lt;NA&gt;
+## 743       Cold/Wind Chill
+## 744     Thunderstorm Wind
+## 745       Cold/Wind Chill
+## 746     Thunderstorm Wind
+## 747     Thunderstorm Wind
+## 748     Thunderstorm Wind
+## 749     Thunderstorm Wind
+## 750     Thunderstorm Wind
+## 751                  Hail
+## 752     Thunderstorm Wind
+## 753     Thunderstorm Wind
+## 754     Thunderstorm Wind
+## 755     Thunderstorm Wind
+## 756     Thunderstorm Wind
+## 757     Thunderstorm Wind
+## 758     Thunderstorm Wind
+## 759     Thunderstorm Wind
+## 760     Thunderstorm Wind
+## 761     Thunderstorm Wind
+## 762     Thunderstorm Wind
+## 763     Thunderstorm Wind
+## 764     Thunderstorm Wind
+## 765     Thunderstorm Wind
+## 766     Thunderstorm Wind
+## 767     Thunderstorm Wind
+## 768     Thunderstorm Wind
+## 769     Thunderstorm Wind
+## 770     Thunderstorm Wind
+## 771     Thunderstorm Wind
+## 772     Thunderstorm Wind
+## 773     Thunderstorm Wind
+## 774     Thunderstorm Wind
+## 775     Thunderstorm Wind
+## 776     Thunderstorm Wind
+## 777     Thunderstorm Wind
+## 778     Thunderstorm Wind
+## 779     Thunderstorm Wind
+## 780     Thunderstorm Wind
+## 781     Thunderstorm Wind
+## 782     Thunderstorm Wind
+## 783     Thunderstorm Wind
+## 784     Thunderstorm Wind
+## 785     Thunderstorm Wind
+## 786     Thunderstorm Wind
+## 787     Thunderstorm Wind
+## 788     Thunderstorm Wind
+## 789     Thunderstorm Wind
+## 790     Thunderstorm Wind
+## 791     Thunderstorm Wind
+## 792     Thunderstorm Wind
+## 793     Thunderstorm Wind
+## 794     Thunderstorm Wind
+## 795     Thunderstorm Wind
+## 796     Thunderstorm Wind
+## 797     Thunderstorm Wind
+## 798     Thunderstorm Wind
+## 799     Thunderstorm Wind
+## 800     Thunderstorm Wind
+## 801     Thunderstorm Wind
+## 802     Thunderstorm Wind
+## 803     Thunderstorm Wind
+## 804     Thunderstorm Wind
+## 805     Thunderstorm Wind
+## 806     Thunderstorm Wind
+## 807     Thunderstorm Wind
+## 808     Thunderstorm Wind
+## 809     Thunderstorm Wind
+## 810     Thunderstorm Wind
+## 811     Thunderstorm Wind
+## 812     Thunderstorm Wind
+## 813     Thunderstorm Wind
+## 814     Thunderstorm Wind
+## 815     Thunderstorm Wind
+## 816     Thunderstorm Wind
+## 817     Thunderstorm Wind
+## 818       Cold/Wind Chill
+## 819       Cold/Wind Chill
+## 820       Cold/Wind Chill
+## 821       Cold/Wind Chill
+## 822       Cold/Wind Chill
+## 823       Cold/Wind Chill
+## 824                 Flood
+## 825                 Flood
+## 826               Tornado
+## 827               Tornado
+## 828               Tornado
+## 829               Tornado
+## 830               Tornado
+## 831               Tornado
+## 832            Waterspout
+## 833               Tornado
+## 834               Tornado
+## 835               Tornado
+## 836                  &lt;NA&gt;
+## 837                  &lt;NA&gt;
+## 838   Tropical Depression
+## 839        Tropical Storm
+## 840        Tropical Storm
+## 841        Tropical Storm
+## 842        Tropical Storm
+## 843        Tropical Storm
+## 844     Thunderstorm Wind
+## 845            Heavy Rain
+## 846     Thunderstorm Wind
+## 847     Thunderstorm Wind
+## 848     Thunderstorm Wind
+## 849     Thunderstorm Wind
+## 850     Thunderstorm Wind
+## 851     Thunderstorm Wind
+## 852     Thunderstorm Wind
+## 853     Thunderstorm Wind
+## 854     Thunderstorm Wind
+## 855     Thunderstorm Wind
+## 856     Thunderstorm Wind
+## 857     Thunderstorm Wind
+## 858     Thunderstorm Wind
+## 859             Lightning
+## 860     Thunderstorm Wind
+## 861     Thunderstorm Wind
+## 862     Thunderstorm Wind
+## 863                  Hail
+## 864     Thunderstorm Wind
+## 865     Thunderstorm Wind
+## 866     Thunderstorm Wind
+## 867               Tsunami
+## 868       Cold/Wind Chill
+## 869                  &lt;NA&gt;
+## 870                  &lt;NA&gt;
+## 871     Thunderstorm Wind
+## 872     Thunderstorm Wind
+## 873                 Flood
+## 874            Heavy Rain
+## 875     Thunderstorm Wind
+## 876          Frost/Freeze
+## 877          Frost/Freeze
+## 878          Frost/Freeze
+## 879               Drought
+## 880                  Heat
+## 881                  &lt;NA&gt;
+## 882                  &lt;NA&gt;
+## 883               Drought
+## 884                  &lt;NA&gt;
+## 885                  &lt;NA&gt;
+## 886                  &lt;NA&gt;
+## 887                  &lt;NA&gt;
+## 888                  &lt;NA&gt;
+## 889                  Heat
+## 890                  Heat
+## 891          Frost/Freeze
+## 892            Heavy Snow
+## 893                  &lt;NA&gt;
+## 894                 Flood
+## 895                 Flood
+## 896                 Flood
+## 897                 Flood
+## 898                 Flood
+## 899                 Flood
+## 900                 Flood
+## 901                 Flood
+## 902                 Flood
+## 903                 Flood
+## 904                 Flood
+## 905                 Flood
+## 906                 Flood
+## 907                 Flood
+## 908                 Flood
+## 909                 Flood
+## 910                 Flood
+## 911                 Flood
+## 912                 Flood
+## 913                 Flood
+## 914          Frost/Freeze
+## 915                 Flood
+## 916                 Flood
+## 917                 Flood
+## 918               Drought
+## 919                  &lt;NA&gt;
+## 920                  &lt;NA&gt;
+## 921          Volcanic Ash
+## 922          Volcanic Ash
+## 923          Volcanic Ash
+## 924          Volcanic Ash
+## 925          Volcanic Ash
+## 926       Cold/Wind Chill
+## 927                  &lt;NA&gt;
+## 928          Funnel Cloud
+## 929               Drought
+## 930                  &lt;NA&gt;
+## 931            Waterspout
+## 932            Waterspout
+## 933            Waterspout
+## 934            Waterspout
+## 935            Waterspout
+## 936            Waterspout
+## 937            Waterspout
+## 938            Waterspout
+## 939            Waterspout
+## 940            Waterspout
+## 941            Waterspout
+## 942                  &lt;NA&gt;
+## 943            Heavy Snow
+## 944                  &lt;NA&gt;
+## 945       Cold/Wind Chill
+## 946              Wildfire
+## 947              Wildfire
+## 948              Wildfire
+## 949              Wildfire
+## 950              Wildfire
+## 951       Cold/Wind Chill
+## 952       Cold/Wind Chill
+## 953       Cold/Wind Chill
+## 954       Cold/Wind Chill
+## 955             High Wind
+## 956       Cold/Wind Chill
+## 957       Cold/Wind Chill
+## 958       Cold/Wind Chill
+## 959                  Hail
+## 960       Cold/Wind Chill
+## 961                  &lt;NA&gt;
+## 962          Winter Storm
+## 963          Winter Storm
+## 964          Winter Storm
+## 965          Winter Storm
+## 966          Winter Storm
+## 967        Winter Weather
+## 968        Winter Weather
+## 969        Winter Weather
+## 970        Winter Weather
+## 971        Winter Weather
+## 972                  &lt;NA&gt;
+## 973                  &lt;NA&gt;
+## 974                  &lt;NA&gt;
+## 975       Cold/Wind Chill
+## 976       Cold/Wind Chill
+## 977       Cold/Wind Chill
+## 978        Winter Weather
+## 979        Winter Weather
+## 980        Winter Weather
+## 981            Heavy Snow
+## 982                 Flood
+## 983       Cold/Wind Chill
+## 984                  Hail
+## 985                  &lt;NA&gt;</code></pre>
+<p>Second passage</p>
 </div>
 
 
