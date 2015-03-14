@@ -89,6 +89,7 @@ print(evtype_data)
 passage_num1 <- gsub("/|\\(|\\)"," ",evtype_doc)
 passage_num1 <- data.frame(grep = passage_num1, output = passage_num1)
 passage_num2 <- read.csv("passage_num2.csv", stringsAsFactors = FALSE, header = TRUE, sep = ";")
+passage_num3 <- read.csv("passage_num3.csv", stringsAsFactors = FALSE, header = TRUE, sep = ";")
 #cleaning function
 clean_evtype <- function(subject = "evtype_data", passage_num = 1) {
       evtype_clean <- data.frame(evtype_data, stringsAsFactors = FALSE)
@@ -114,6 +115,7 @@ clean_evtype <- function(subject = "evtype_data", passage_num = 1) {
 
 clean_evtype(passage_num = 1)
 clean_evtype(passage_num = 2)
+clean_evtype(passage_num = 3)
 
 ```
 The first passage gives these results 

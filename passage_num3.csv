@@ -1,1 +1,278 @@
-grep;outputsummary;Summarylandslide;Avalanchelandslides;Avalanchelandspout;Avalanchelandslump;Avalanchewind;Cold/Wind Chillwarmth;Heathot;Heatdry;Droughtbelow normal;Droughtdriest;Droughtdryness;Droughtsnow;Heavy Snowsnows;Heavy Snowsnowfall;Heavy Snowblowing-snow;Heavy Snowfreeze;Frost/Freezecool;Frost/Freezefrost;Frost/Freezecold;Frost/Freezeglaze;Frost/Freezeice;Frost/Freezelow temperature;Frost/Freezebeach;Coastal Flooddevel;Dust Stormflash;Flash Floodflashflooding;Flash Floodhigh tide;Storm Surge/Tideblow-out;Storm Surge/Tidewindchill;Cold/Wind Chillwind chill;Cold/Wind Chillwind chills;Cold/Wind Chillfire;Wildfirefires;WildfireCoastal flooding;Coastal Floodcoastal flood;Coastal Floodcoastal erosion;Coastal Floodcstl flooding;Coastal Floodcoastal storm;Marine Strong Windcoastalstorm;Marine Strong Windprecipitation;Heavy Rainprecipatation;Heavy Rainprecip;Heavy Rainrainfall;Heavy Rainshower;Heavy Rainshowers;Heavy Rainrainstorm;Heavy Rainfog;Dense Foggustnado;Tornadosurf;High Surfhigh winds;High Windhurricane;Hurricane (Typhoon)ligthing;Lightningligntning;Lightningmudslide;Debris Flowmudslides;Debris Flowthunderstorm;Thunderstorm Windthunderstorms;Thunderstorm Windthundeerstorm;Thunderstorm Windthundersnow;Thunderstorm Windtstm;Thunderstorm Windtstmw;Thunderstorm Windsmall;Floodurban;FloodVolcanic;Volcanic Ashwater spout;Waterspoutwayterspout;Waterspoutwintery;Winter Weatherwintry;Winter Weatherflash flood;
+grep;output
+Astronomical Low Tide;Astronomical Low Tide
+Avalanche;Avalanche
+Blizzard;Blizzard
+Coastal Flood;Coastal Flood
+Cold Wind Chill;Cold Wind Chill
+Debris Flow;Debris Flow
+Dense Fog;Dense Fog
+Dense Smoke;Dense Smoke
+Drought;Drought
+Dust Devil;Dust Devil
+Dust Storm;Dust Storm
+Excessive Heat;Excessive Heat
+Extreme Cold Wind Chill;Extreme Cold Wind Chill
+Flash Flood;Flash Flood
+Flood;Flood
+Frost Freeze;Frost Freeze
+Funnel Cloud;Funnel Cloud
+Freezing Fog;Freezing Fog
+Hail;Hail
+Heat;Heat
+Heavy Rain;Heavy Rain
+Heavy Snow;Heavy Snow
+High Surf;High Surf
+High Wind;High Wind
+Hurricane  Typhoon ;Hurricane  Typhoon 
+Ice Storm;Ice Storm
+Lake-Effect Snow;Lake-Effect Snow
+Lakeshore Flood;Lakeshore Flood
+Lightning;Lightning
+Marine Hail;Marine Hail
+Marine High Wind;Marine High Wind
+Marine Strong Wind;Marine Strong Wind
+Marine Thunderstorm Wind;Marine Thunderstorm Wind
+Rip Current;Rip Current
+Seiche;Seiche
+Sleet;Sleet
+Storm Surge Tide;Storm Surge Tide
+Strong Wind;Strong Wind
+Thunderstorm Wind;Thunderstorm Wind
+Tornado;Tornado
+Tropical Depression;Tropical Depression
+Tropical Storm;Tropical Storm
+Tsunami;Tsunami
+Volcanic Ash;Volcanic Ash
+Waterspout;Waterspout
+Wildfire;Wildfire
+Winter Storm;Winter Storm
+Winter Weather;Winter Weather
+summary;Summary
+landslide;Avalanche
+landslides;Avalanche
+landspout;Avalanche
+landslump;Avalanche
+wind;Cold/Wind Chill
+warmth;Heat
+hot;Heat
+dry;Drought
+below normal;Drought
+driest;Drought
+dryness;Drought
+snow;Heavy Snow
+snows;Heavy Snow
+snowfall;Heavy Snow
+blowing-snow;Heavy Snow
+freeze;Frost/Freeze
+cool;Frost/Freeze
+frost;Frost/Freeze
+cold;Frost/Freeze
+glaze;Frost/Freeze
+ice;Frost/Freeze
+low temperature;Frost/Freeze
+beach;Coastal Flood
+devel;Dust Storm
+flash;Flash Flood
+flashflooding;Flash Flood
+high tide;Storm Surge/Tide
+blow-out;Storm Surge/Tide
+windchill;Cold/Wind Chill
+wind chill;Cold/Wind Chill
+wind chills;Cold/Wind Chill
+fire;Wildfire
+fires;Wildfire
+Coastal flooding;Coastal Flood
+coastal flood;Coastal Flood
+coastal erosion;Coastal Flood
+cstl flooding;Coastal Flood
+coastal storm;Marine Strong Wind
+coastalstorm;Marine Strong Wind
+precipitation;Heavy Rain
+precipatation;Heavy Rain
+precip;Heavy Rain
+rainfall;Heavy Rain
+shower;Heavy Rain
+showers;Heavy Rain
+rainstorm;Heavy Rain
+fog;Dense Fog
+gustnado;Tornado
+surf;High Surf
+high winds;High Wind
+hurricane;Hurricane (Typhoon)
+ligthing;Lightning
+ligntning;Lightning
+mudslide;Debris Flow
+mudslides;Debris Flow
+thunderstorm;Thunderstorm Wind
+thunderstorms;Thunderstorm Wind
+thundeerstorm;Thunderstorm Wind
+thundersnow;Thunderstorm Wind
+tstm;Thunderstorm Wind
+tstmw;Thunderstorm Wind
+small;Flood
+urban;Flood
+Volcanic;Volcanic Ash
+water spout;Waterspout
+wayterspout;Waterspout
+wintery;Winter Weather
+wintry;Winter Weather
+flash floooding;Flash Flood
+flash flood;Flash Flood
+FLOOD FLOOD/FLASH;Flash Flood
+FLOOD/FLASH;Flash Flood
+FLOOD/FLASH FLOOD;Flash Flood
+FLOOD/FLASH FLOODING;Flash Flood
+FLOOD/FLASH/FLOOD;Flash Flood
+FLOOD/FLASHFLOOD;Flash Flood
+avalace;Avalanche
+beach;Coastal Flood
+below normal;Drought
+blizzard;Blizzard
+dust;Dust Storm
+coastal flooding;Coastal Flood
+coastal flood;Coastal Flood
+tidal flood;Coastal Flood
+coastalflood;Coastal Flood
+cstl flooding;Coastal Flood
+cstl flood;Coastal Flood
+cold/winds;Cold/Wind Chill
+downburst;Cold/Wind Chill
+drought;Drought
+dust storm;Dust Storm
+duststorm;Dust Storm
+microburst;High Wind
+rain;Heavy Rain
+wetness;Heavy Rain
+wet;Heavy Rain
+Flood & heavy rain;Flood
+FREEZING DRIZZLE;Frost/Freeze
+FREEZING DRIZZLE AND FREEZING;Frost/Freeze
+funnel;Funnel Cloud
+funnels;Funnel Cloud
+Flood/Strong Wind;Flood
+Freezing Rain;Frost/Freeze
+Freezing Spray;Frost/Freeze
+Freezing drizzle;Frost/Freeze
+Freezing rain;Frost/Freeze
+Freezing Drizzle;Frost/Freeze
+HEAVY RAIN/LIGHTNING;Heavy Rain
+HEAVY SNOW AND HIGH WINDS;Heavy Snow
+HEAVY SNOW AND STRONG WINDS;Heavy Snow
+HEAVY SNOW/HIGH WIND;Heavy Snow
+HEAVY SNOW/HIGH WINDS;Heavy Snow
+HEAVY SNOW/HIGH WINDS & FLOOD;Heavy Snow
+HEAVY SNOW/HIGH WINDS/FREEZING;Heavy Snow
+HEAVY SNOW/ICE;Heavy Snow
+HEAVY SNOW/ICE STORM;Heavy Snow
+HEAVY SNOW/SLEET;Heavy Snow
+HEAVY SNOW/SQUALLS;Heavy Snow
+HEAVY SNOW/WIND;Heavy Snow
+HEAVY SNOW/WINTER STORM;Heavy Snow
+HEAVY SNOWPACK;Heavy Snow
+HEAVY SURF COASTAL FLOODING;High Surf
+HIGH  SWELLS;High Surf
+HIGH SEAS;High Surf
+HIGH TEMPERATURE RECORD;Heat
+HIGH WATER;Storm Surge/Tide
+HIGH WAVES;High Surf
+HOT/DRY PATTERN;Heat
+HURRICANE OPAL/HIGH WINDS;Hurricane (Typhoon)
+HVY RAIN;Heavy Rain
+Heavy Rain/High Surf;Heavy Rain
+ICE/STRONG WINDS;Frost/Freeze
+ICY ROADS;Frost/Freeze
+LACK OF SNOW;Lake-Effect Snow
+LAKE EFFECT SNOW;Lake-Effect Snow
+LAKE FLOOD;Lakeshore Flood
+LAKESHORE FLOOD;Lakeshore Flood
+LANDSLIDE/URBAN FLOOD;Avalanche
+LARGE WALL CLOUD;Dense Fog
+LIGHT FREEZING RAIN;Frost/Freeze
+LIGHT SNOW;Frost/Freeze
+LIGHT SNOW/FREEZING PRECIP;Frost/Freeze
+LIGHTING;Lightning
+LIGNTNING;Lightning
+LOCAL FLASH FLOOD;Flash Flood
+Lake Effect Snow;Lake-Effect Snow
+Light snow;Frost/Freeze
+Light Snow;Frost/Freeze
+Light Snow/Flurries;Frost/Freeze
+Light Snowfall;Frost/Freeze
+Light snow;Frost/Freeze
+MARINE STRONG WIND;Marine High Wind
+MARINE THUNDERSTORM WIND;Marine Thunderstorm Wind
+MARINE TSTM WIND;Marine Thunderstorm Wind
+MUD SLIDE;Debris Flow
+MUD SLIDES;Debris Flow
+MUD/ROCK SLIDE;Debris Flow
+NON TSTM WIND;High Wind
+NON-SEVERE WIND DAMAGE;High Wind
+PROLONGED RAIN;Heavy Rain
+RAPIDLY RISING WATER;Storm Surge/Tide
+RECORD COLD AND HIGH WIND;Frost/Freeze
+RECORD HIGH;Heat
+RECORD HIGH TEMPERATURE;Heat
+RECORD HIGH TEMPERATURES;Heat
+RECORD SNOW/COLD;Heavy Rain
+RECORD TEMPERATURE;Heat
+RECORD TEMPERATURES;Heat
+RECORD WARM;Heat
+RECORD WARM TEMPS.;Heat
+ROCK SLIDE;Avalanche
+ROGUE WAVE;High Surf
+ROUGH SEAS;High Surf
+Record High;High Wind
+Record Temperatures;Heat
+SAHARAN DUST;Dust Storm
+SEVERE TURBULENCE;High Wind
+SMOKE;Wildfire
+SNOW AND COLD;Heavy Snow
+SNOW AND HEAVY SNOW;Heavy Snow
+SNOW AND ICE;Heavy Snow
+SNOW AND ICE STORM;Heavy Snow
+SNOW AND SLEET;Heavy Snow
+SNOW AND WIND;Heavy Snow
+SNOW DROUGHT;Heavy Snow
+SNOW FREEZING RAIN;Heavy Snow
+SNOW SHOWERS;Heavy Snow
+SNOW SLEET;Heavy Snow
+SNOW SQUALL;Heavy Snow
+SNOW SQUALLS;Heavy Snow
+SNOW- HIGH WIND- WIND CHILL;Heavy Snow
+SNOW/ BITTER COLD;Heavy Snow
+SNOW/ ICE;Heavy Snow
+SNOW/BLOWING SNOW;Heavy Snow
+SNOW/COLD;Heavy Snow
+SNOW/FREEZING RAIN;Heavy Snow
+SNOW/HEAVY SNOW;Heavy Snow
+SNOW/HIGH WINDS;Heavy Snow
+SNOW/ICE;Heavy Snow
+SNOW/ICE STORM;Heavy Snow
+SNOW/RAIN;Heavy Snow
+SNOW/RAIN/SLEET;Heavy Snow
+SNOW/SLEET;Heavy Snow
+SNOW/SLEET/FREEZING RAIN;Heavy Snow
+SNOW/SLEET/RAIN;Heavy Snow
+SNOWFALL RECORD;Heavy Snow
+SNOWMELT FLOODING;Heavy Snow
+SNOWSTORM;Heavy Snow
+SNOW\COLD;Heavy Snow
+STORM FORCE WINDS;High Wind
+STORM SURGE;Storm Surge/Tide
+STORM SURGE/TIDE;Storm Surge/Tide
+Sml Stream Fld;Flood
+TORNDAO;Tornado
+TORRENTIAL RAIN;Heavy Rain
+TSTM HEAVY RAIN;Thunderstorm Wind
+TUNDERSTORM WIND;Thunderstorm Wind
+TYPHOON;Hurricane (Typhoon)
+Temperature record;Heat
+UNSEASONABLY WARM;Heat
+UNSEASONABLY WARM & WET;Heat
+UNSEASONABLY WARM AND DRY;Heat
+UNSEASONABLY WARM YEAR;Heat
+UNSEASONABLY WARM/WET;Heat
+UNSEASONABLY WET;Heavy Rain
+UNSEASONAL RAIN;Heavy Rain
+UNSEASONAL LOW TEMP;Frost/Freeze
+UNUSUALLY WARM;Heat
