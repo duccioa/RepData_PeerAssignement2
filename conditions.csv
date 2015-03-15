@@ -1,4 +1,5 @@
 grep;output
+Summary;Summary
 Astronomical Low Tide;Astronomical Low Tide
 Avalanche;Avalanche
 Blizzard;Blizzard
@@ -47,7 +48,6 @@ Waterspout;Waterspout
 Wildfire;Wildfire
 Winter Storm;Winter Storm
 Winter Weather;Winter Weather
-summary;Summary
 landslide;Avalanche
 landslides;Avalanche
 landspout;Avalanche
@@ -276,3 +276,137 @@ UNSEASONABLY WET;Heavy Rain
 UNSEASONAL RAIN;Heavy Rain
 UNSEASONAL LOW TEMP;Frost/Freeze
 UNUSUALLY WARM;Heat
+avalance;Avalanche
+blizzard;Blizzard
+COASTAL  FLOODING/EROSION;Coastal Flood
+COASTAL SURGE;Storm Surge/Tide
+COLD AIR TORNADO;Tornado
+COLD AND WET CONDITIONS;Frost/Freeze
+COOL AND WET;Frost/Freeze
+DAM BREAK;Flood
+DAM FAILURE;Flood
+DOWNBURST;High Wind
+DOWNBURST WINDS;High Wind
+Dust Devil;Dust Devil
+FLOOD/RAIN/WIND;Flood
+FLOOD/RAIN/WINDS;Flood
+FLOODING/HEAVY RAIN;Flood
+GRADIENT WIND;High Wind
+GRADIENT WINDS;High Wind
+GUSTY LAKE WIND;High Wind
+GUSTY WIND;High Wind
+GUSTY WIND/HAIL;High Wind
+GUSTY WIND/HVY RAIN;High Wind
+GUSTY WINDS;High Wind
+Gradient wind;High Wind
+Gusty Wind;High Wind
+Gusty Winds;High Wind
+Gusty wind/rain;High Wind
+Gusty winds;High Wind
+HAIL/ICY ROADS;Hail
+HAIL/WIND;Hail
+HAIL/WINDS;Hail
+HAILSTORM;Hail
+HAILSTORMS;Hail
+HEAVY SNOW   FREEZING RAIN;Heavy Snow
+HEAVY SNOW & ICE;Heavy Snow
+HEAVY SNOW/BLIZZARD;Heavy Snow
+HEAVY SNOW/BLIZZARD/AVALANCHE;Heavy Snow
+HEAVY SWELLS;High Surf
+HIGH  WINDS;High Wind
+HIGH WIND;High Wind
+HIGH WIND (G40);High Wind
+HIGH WIND 48;High Wind
+HIGH WIND 63;High Wind
+HIGH WIND 70;High Wind
+HIGH WIND AND HEAVY SNOW;High Wind
+HIGH WIND AND HIGH TIDES;High Wind
+HIGH WIND AND SEAS;High Wind
+HIGH WIND DAMAGE;High Wind
+HIGH WIND/ BLIZZARD;High Wind
+HIGH WIND/BLIZZARD;High Wind
+HIGH WIND/BLIZZARD/FREEZING RA;High Wind
+HIGH WIND/HEAVY SNOW;High Wind
+HIGH WIND/LOW WIND CHILL;High Wind
+HIGH WIND/SEAS;High Wind
+HIGH WIND/WIND CHILL;High Wind
+HIGH WIND/WIND CHILL/BLIZZARD;High Wind
+HIGH WINDS;High Wind
+HIGH WINDS 55;High Wind
+HIGH WINDS 57;High Wind
+HIGH WINDS 58;High Wind
+HIGH WINDS 63;High Wind
+HIGH WINDS 66;High Wind
+HIGH WINDS 67;High Wind
+HIGH WINDS 73;High Wind
+HIGH WINDS 76;High Wind
+HIGH WINDS 80;High Wind
+HIGH WINDS 82;High Wind
+HIGH WINDS AND WIND CHILL;High Wind
+HIGH WINDS DUST STORM;High Wind
+HIGH WINDS HEAVY RAINS;High Wind
+HIGH WINDS/;High Wind
+HIGH WINDS/COASTAL FLOOD;High Wind
+HIGH WINDS/COLD;High Wind
+HIGH WINDS/FLOODING;High Wind
+HIGH WINDS/HEAVY RAIN;High Wind
+HIGH WINDS/SNOW;High Wind
+HYPERTHERMIA/EXPOSURE;Frost/Freeze
+HYPOTHERMIA;Frost/Freeze
+HYPOTHERMIA/EXPOSURE;Frost/Freeze
+Heavy snow shower;Heavy Snow
+Hypothermia/Exposure;Frost/Freeze
+ICE STORM/FLASH FLOOD;Frost/Freeze
+LAKE-EFFECT SNOW;Lake-Effect Snow
+LIGHT SNOW AND SLEET;Sleet
+LIGHTNING AND HEAVY RAIN;Lightning
+LIGHTNING AND THUNDERSTORM WIN;Lightning
+LIGHTNING AND WINDS;Lightning
+LIGHTNING/HEAVY RAIN;Lightning
+LOW TEMPERATURE RECORD;Frost/Freeze
+MARINE HIGH WIND;Marine High Wind
+RECORD LOW;Frost/Freeze
+RECORD LOW RAINFALL;Frost/Freeze
+SLEET & FREEZING RAIN;Sleet
+SLEET STORM;Sleet
+SLEET/FREEZING RAIN;Sleet
+SLEET/ICE STORM;Sleet
+SLEET/RAIN/SNOW;Sleet
+SLEET/SNOW;Sleet
+SNOW\COLD;Heavy Snow
+STRONG WIND;High Wind
+STRONG WIND GUST;High Wind
+STRONG WINDS;High Wind
+Small Hail;Hail
+Strong Wind;High Wind
+Strong Winds;High Wind
+Strong winds;High Wind
+THUDERSTORM WINDS;Thunderstorm Wind
+THUNDERESTORM WINDS;Thunderstorm Wind
+THUNDERSTORM WINDS FUNNEL CLOU;Thunderstorm Wind
+THUNDERSTORM WINDS HEAVY RAIN;Thunderstorm Wind
+THUNDERSTORM WINDS SMALL STREA;Thunderstorm Wind
+THUNDERSTORM WINDS URBAN FLOOD;Thunderstorm Wind
+THUNDERSTORM WINDS/FLASH FLOOD;Thunderstorm Wind
+THUNDERSTORM WINDS/FUNNEL CLOU;Thunderstorm Wind
+THUNDERSTORM WINDS/HEAVY RAIN;Thunderstorm Wind
+THUNDERSTROM WIND;Thunderstorm Wind
+THUNDERSTROM WINDS;Thunderstorm Wind
+THUNDERTORM WINDS;Thunderstorm Wind
+THUNDERTSORM WIND;Thunderstorm Wind
+THUNDESTORM WINDS;Thunderstorm Wind
+THUNERSTORM WINDS;Thunderstorm Wind
+TORNADO/WATERSPOUT;Tornado
+TORNADOES, TSTM WIND, HAIL;Tornado
+VERY WARM;Heat
+WARM WEATHER;Heat
+WIND ADVISORY;High Wind
+WIND AND WAVE;High Wind
+WIND DAMAGE;High Wind
+WIND GUSTS;High Wind
+WIND STORM;High Wind
+WIND/HAIL;High Wind
+WINTER STORM HIGH WINDS;Winter Storm
+WINTER STORM/HIGH WIND;Winter Storm
+WINTER STORM/HIGH WINDS;Winter Storm
+small hail;Hail

@@ -84,43 +84,52 @@ print(evtype_data)
 
 ```
 
+The following code uses the function clean_evtype to create a dataframe. The function takes an external list saved as csv, as input. The list has two columns :the first one contains text strings to be used as grep in the evtype column of the data, the second indicates the correspondant category of the 48 defined in the documentation. 
+To compile this list, I first simply used the 48 categories as grep and then I refined it in further iteration of the function clean_evtype(). It contains some redundant lines as it was compiled by further refinement, without changing the existing. 
+The list was compiled using a spreadsheet editor and saved in csv and it is  included in the repository with the present code.
+
 ```{r}
 #conditions
-passage_num1 <- gsub("/|\\(|\\)"," ",evtype_doc)
-passage_num1 <- data.frame(grep = passage_num1, output = passage_num1)
-passage_num2 <- read.csv("passage_num2.csv", stringsAsFactors = FALSE, header = TRUE, sep = ";")
-passage_num3 <- read.csv("passage_num3.csv", stringsAsFactors = FALSE, header = TRUE, sep = ";")
-#cleaning function
-clean_evtype <- function(subject = "evtype_data", passage_num = 1) {
-      evtype_clean <- data.frame(evtype_data, stringsAsFactors = FALSE)
-      for(j in 1:passage_num) {
-            cond_title <- paste("passage_num", j, "_output", sep = "")
-            cond_title_previous <- paste("passage_num", j - 1, "_output", sep = "")
-            cond <- get(paste("passage_num", j, sep = ""), envir = .GlobalEnv)
-            cond <- data.frame(grep = as.character(cond$grep), 
-                               output = as.character(cond$output), stringsAsFactors = FALSE)
-            evtype_clean[ , cond_title] <- NA
-            for(i in 1:length(cond$grep)) {
-                  index <- grep(cond$grep[i], evtype_clean$evtype, ignore.case = TRUE)
-                  if(length(index > 0)) {
-                  for(z in 1:length(index)) { evtype_clean[index[z], cond_title] <- cond$output[i]                    
-                        
-                        }
-                   }
-                  
+clean_evtype <- function(subject = "evtype_data", condition_list = "conditions.csv") {
+      cond <- read.csv(condition_list, stringsAsFactors = FALSE, header = TRUE, sep = ";")
+      evtype_clean <- data.frame(evtype = evtype_data, output = NA, stringsAsFactors = FALSE)
+      for(i in 1:length(cond$grep)) {
+            index <- grep(cond$grep[i], evtype_clean$evtype, ignore.case = TRUE)
+            if(length(index > 0)) {
+                  for(z in 1:length(index)) {
+                        evtype_clean$output[index[z]] <- cond$output[i]     
                   }
+                  
             }
-      evtype_clean <<- evtype_clean
       }
-
-clean_evtype(passage_num = 1)
-clean_evtype(passage_num = 2)
-clean_evtype(passage_num = 3)
+      for(i in 1:length(evtype_clean$output)) {
+            evtype_clean$output[is.na(evtype_clean$output)] <- "Other"
+      }
+      evtype_clean$evtype <- as.factor(evtype_clean$evtype)
+      evtype_clean$output <- as.factor(evtype_clean$output)
+      evtype_clean <<- evtype_clean
+      write.table(evtype_clean, "evtype_clean.csv")
+}
 
 ```
-The first passage gives these results 
+The following list is then used to reassign the categories to the working dataframe df
 ```{r}
 print(evtype_clean)
+for(i in 1:length(df$evtype)) {
+      index <- grep(make.names(evtype_clean$evtype[i]), make.names(df$evtype[i]))
+      if(length(index > 0 )) {
+            for(z in 1:length(index)) {
+                  df$evtype[index[z]] <- evtype_clean$output[i]
+            }
+      }
+}
 ```
-Second passage
+
 ```{r}
+df$evtype[i] <- evtype_clean$output[which(df$evtype[i] == evtype_clean$evtype)]
+```
+
+
+
+
+
