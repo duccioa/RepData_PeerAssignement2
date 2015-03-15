@@ -115,18 +115,11 @@ clean_evtype <- function(subject = "evtype_data", condition_list = "conditions.c
 The following list is then used to reassign the categories to the working dataframe df
 ```{r}
 print(evtype_clean)
-for(i in 1:length(df$evtype)) {
-      index <- grep(make.names(evtype_clean$evtype[i]), make.names(df$evtype[i]))
-      if(length(index > 0 )) {
-            for(z in 1:length(index)) {
-                  df$evtype[index[z]] <- evtype_clean$output[i]
-            }
-      }
-}
+levels(df$evtype) <- as.factor(evtype_clean$output)
 ```
 
 ```{r}
-df$evtype[i] <- evtype_clean$output[which(df$evtype[i] == evtype_clean$evtype)]
+
 ```
 
 
