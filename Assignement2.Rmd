@@ -1,13 +1,15 @@
 ##Load packages
 ```{r Load packages}
 library(lubridate)
+library(dplyr)
+library(ggplot2)
 ```
 ##Download data and documentation, create log file and load the data in R
 ```{r Download data and documentation, cache=TRUE}
 link_data <- "https://d396qusza40orc.cloudfront.net/repdata%2Fdata%2FStormData.csv.bz2"
 link_doc1 <- "https://d396qusza40orc.cloudfront.net/repdata%2Fpeer2_doc%2Fpd01016005curr.pdf"
 link_doc2 <- "https://d396qusza40orc.cloudfront.net/repdata%2Fpeer2_doc%2FNCDC%20Storm%20Events-FAQ%20Page.pdf"
-date <- date()
+
 ##create directory for raw data
 if(!file.exists("./raw_data")) {
       dir.create("./raw_data")
@@ -65,6 +67,7 @@ df <- with(StormData,
                       cropdmgexp = CROPDMGEXP,
                       remarks = REMARKS)
            )
+head(df)
 ```
 
 ##analysis of the dataset
@@ -80,8 +83,6 @@ The difference between EVTYPE's categories of the documentation and the data
 cbind(EVTYPE.DOCUMENTATION = length(evtype_doc), EVTYPE.DATA = length(levels(df$evtype)))
 print(evtype_doc)
 print(evtype_data)
-#cleaning EVTYPE
-
 ```
 
 The following code uses the function clean_evtype to create a dataframe. The function takes an external list saved as csv, as input. The list has two columns :the first one contains text strings to be used as grep in the evtype column of the data, the second indicates the correspondant category of the 48 defined in the documentation. 
@@ -89,9 +90,8 @@ To compile this list, I first simply used the 48 categories as grep and then I r
 The list was compiled using a spreadsheet editor and saved in csv and it is  included in the repository with the present code.
 
 ```{r}
-#conditions
 clean_evtype <- function(subject = "evtype_data", condition_list = "conditions.csv") {
-      cond <- read.csv(condition_list, stringsAsFactors = FALSE, header = TRUE, sep = ";")
+      cond <- read.csv(condition_list, stringsAsFactors = FALSE, header = TRUE, sep = ";")#condition_list is the link to a list containing a column of conditions for the grep and a columns with the relative transformation to a factor of the list EVTYPE.txt
       evtype_clean <- data.frame(evtype = evtype_data, output = NA, stringsAsFactors = FALSE)
       for(i in 1:length(cond$grep)) {
             index <- grep(cond$grep[i], evtype_clean$evtype, ignore.case = TRUE)
@@ -114,15 +114,46 @@ clean_evtype <- function(subject = "evtype_data", condition_list = "conditions.c
 ```
 The following list is then used to reassign the categories to the working dataframe df
 ```{r}
-print(evtype_clean)
+clean_evtype()
 levels(df$evtype) <- as.factor(evtype_clean$output)
+levels(df$evtype)
+```
+
+
+```{r Summary fatalities}
+summary_harmful <- aggregate(fatalities ~ evtype, df, FUN = sum)
+summary_harmful <- cbind(summary_harmful, injuries = aggregate(injuries ~ evtype, df, FUN = sum)$injuries)
+summary_harmful <- arrange(summary_harmful, desc(fatalities))
+summary_harmful <- head(summary_harmful, 15)
+df_harmful <- df[df$evtype %in% summary_harmful$evtype,]
+factor_frequency <- summary(as.factor(as.character(df_harmful$evtype)))
+factor_frequency <- data.frame(evtype = names(factor_frequency), freq = factor_frequency)
+row.names(factor_frequency) <- NULL
+fatalities <- summary_harmful[,1:2]
+injuries <- arrange(summary_harmful[,c(1,3)], desc(injuries))
+
+
+#summary_harmful <- arrange(summary_harmful, as.character(evtype))
+#summary_harmful <- cbind(summary_harmful, frequency = factor_frequency$freq)
+#summary_harmful <- arrange(summary_harmful, desc(fatalities))
+print(fatalities)
+print(injuries)
 ```
 
 ```{r}
+fatalities$evtype <- factor(fatalities$evtype, 
+                                 levels = fatalities$evtype[order(fatalities$fatalities)])
+                                                                  
+injuries$evtype <- factor(injuries$evtype, 
+                                 levels = injuries$evtype[order(injuries$injuries)])
+                                                                  
+ggplot(fatalities, aes(x = evtype, y = fatalities)) +
+      geom_bar(stat = "identity", fill = "red") + 
+      coord_flip()
+ggplot(injuries, aes(x = evtype, y = injuries)) +
+      geom_bar(stat = "identity", fill = "blue") + 
+      coord_flip()
 
 ```
-
-
-
 
 
