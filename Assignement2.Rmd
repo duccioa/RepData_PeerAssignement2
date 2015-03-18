@@ -1,18 +1,26 @@
 Weather events in the US:
 ========================================
-The most harmfuls and the most damagings
-========================================
+Analysis of the consequences to population health and properties
+================================================================
 The present analysis explores the U.S. National Oceanic and Atmospheric Administration's (NOAA) storm database, in order to answer the two following questions:
+
 1. Across the United States, which types of events are most harmful with respect to population health?
+
 2. Across the United States, which types of events have the greatest economic consequences?
 
+The major work of data processing consists in collapsing the original more than 900 categories of events into the 48 of the codebook.
+It is found that considering the number of fatalities, the heat is the major cause of death from weather events, followed by tornados and flash floods.
+The weather events that causes most damage to crops and properties are hurricanes, which in the period 1995-2011, together with hurricans, storm surges, floods and tornados, makes 70% of the total damages caused by weather events in the United States.
 
-##Data Processing
+
+#Data Processing
+
 ###Loading data and documentation
-```{r Loading packages, echo=FALSE}
+```{r Loading packages, warning=FALSE}
 library(lubridate)
 library(dplyr)
 library(ggplot2)
+library(scales)
 ```
 
 ```{r Download data and documentation, cache=TRUE}
@@ -55,7 +63,7 @@ if(!exists("StormData")) {
 
 rm(link_doc1, link_doc2, link_data)
 ```
-###Working data
+###Extract the working dataset
 First we read the headings of the original dataset
 ```{r Headings of the dataset}
 names(StormData)
@@ -72,17 +80,38 @@ df <- with(StormData,
                       propdmg = PROPDMG, 
                       propdmgexp = PROPDMGEXP, 
                       cropdmg = CROPDMG, 
-                      cropdmgexp = CROPDMGEXP,
-                      remarks = REMARKS)
+                      cropdmgexp = CROPDMGEXP
+                      )
+                      
            )
 
 head(df)
 ```
 
-###Processing
+###Processing of the working dataset
+
+####Relevant years
+
+The documentation explains that the years before 1995 have little data and are not recorded according to the codebook. The following plot shows the number of observations per year.
+
+```{r Graph1 - Number of observations per year, fig.width=10}
+ggplot(df, aes(x = as.factor(year(bgn_date)))) +
+      geom_bar(fill = "lightgoldenrod4") +
+      theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+      ggtitle("Number of observations per year") +
+      labs(x = "Year")
+
+```
+
+Therefore for the analysis, the data prior to 1995 is filtered out.
+
+```{r Removing data before year 1995}
+df <- filter(df, year(bgn_date) >= 1995)
+```
+
 ####Event types: Evtype
 
-In order to categorise the events, the documentation that comes with the dataset proposes 48 categories (**evtype**) of weather events (StormDataDoc.pdf, p.6, table 1. Storm Data Event Table).
+In order to categorise the events, the documentation that comes with the original dataset (downloadable [here](https://d396qusza40orc.cloudfront.net/repdata%2Fpeer2_doc%2Fpd01016005curr.pdf"Documentation")) proposes 48 categories (**evtype**) of weather events (StormDataDoc.pdf, p.6, table 1. Storm Data Event Table).
 
 ```{r Categories from the documentation}
 evtype_doc <- c("Astronomical Low Tide",
@@ -135,12 +164,14 @@ evtype_doc <- c("Astronomical Low Tide",
 "Winter Weather")
 ```
 
-The data, insetad, presents more than 900 evtype categories
+On the other hand, the data presents more than 900 evtype categories
 
 ```{r}
 evtype_data <- as.character(levels(df$evtype))
 cbind(EVTYPE.DOCUMENTATION = length(evtype_doc), EVTYPE.DATA = length(levels(df$evtype)))
 ```
+
+In summary the method used to clean the data's weather event categories is to use a dataframe where one column contains the categories of the data and the other column the relative categories of the documentation. This dataframe is than used to replace the evtype column of the dataset.
 
 The following code creates the dataframe **evtype_clean** with two columns: the first (**evtype**) corresponds to the categories from the data and the second one (**output**) corresponds to the relative categories from the documentation.
 The output variable is created by performing the following grep functions on the first one and add the new variable in the relevant rows. 
@@ -563,7 +594,7 @@ evtype_clean$output[grep("WINTER STORM HIGH WINDS", evtype_clean$evtype, ignore.
 evtype_clean$output[grep("WINTER STORM/HIGH WIND", evtype_clean$evtype, ignore.case = TRUE)]<- "Winter Storm"
 evtype_clean$output[grep("WINTER STORM/HIGH WINDS", evtype_clean$evtype, ignore.case = TRUE)]<- "Winter Storm"
 evtype_clean$output[grep("small hail", evtype_clean$evtype, ignore.case = TRUE)]<- "Hail"
-evtype_clean$output[grep("NA", evtype_clean$evtype, ignore.case = TRUE)]<- "Others"
+evtype_clean$output[grep("heavy seas",evtype_clean$evtype, ignore.case = TRUE)]<- "High Surf"
 
 
 evtype_clean$evtype <- as.factor(evtype_clean$evtype)
@@ -572,13 +603,11 @@ evtype_clean$output <- as.factor(evtype_clean$output)
 
 The following is a list showing how every category of the data has been replaced with a category from the documentation.
 
-
-
 ```{r Table of replacement, fig.width=9}
 print(evtype_clean)
 ```
 
-This list is used to reassign the categories to the working dataframe df
+This list is used to reassign the categories to the working dataframe **df**.
 
 ```{r}
 levels(df$evtype) <- as.factor(evtype_clean$output)
@@ -589,6 +618,114 @@ The result are the following categories
 levels(df$evtype)
 ```
 
+###Correcting an inflated damage
+
+The following table show the mosst damaging events of all. It appears to be an inflated value, the top one by a factor of 1000. 
+
+```{r}
+head(arrange(filter(df, propdmgexp == "B"), desc(propdmg)), 10)
+```
+
+Further investigation on the website of the National Climatic Data Center confirmed that the value is not 115B but 115M. It is therefore corrected accordingly.
+
+```{r}
+index <- which(df$propdmg == 115 & df$propdmgexp == "B")
+df$propdmgexp[index] <- "M"
+
+```
+###Cleaning PROPDMGEXP and CROPDMGEXP
+
+The two variable **propdmg** and **cropdmgexp** indicate the multipliers for the relative variables **propdmg** and **cropdmg**. 
+The following tables are a rough way of checking what are the relevant codes. It indicates the codes used in the dataset and the sum of the relative damages.
+
+```{r}
+aggregate(propdmg ~ as.factor(propdmgexp), df, FUN = sum)
+aggregate(cropdmg ~ as.factor(cropdmgexp), df, FUN = sum)
+```
+
+The letters "B", "M", "K" represents, according to the documentation, the multipliers 10^9, 10^6, 10^3. With the same logic "H" is interpreted as 10^2 and the numbers as exponent of 10, therefore the multipliers factors will be converted according to the following table:
+
+```{r}
+propdmgexp_conv <- data.frame(input = levels(as.factor(df$propdmgexp)), output = c(1, NA, NA, 1, 10, 10^2, 10^3, 10^4, 10^5, 10^6, 10^7, 10^8, NA, 10^9, 10^2, 10^3, 10^6,10^2, 10^6))
+cropdmgexp_conv <- data.frame(input = levels(as.factor(df$cropdmgexp)), output = c(1, 1, 10^2, NA, 10^9, 10^3, 10^6, 10^3, 10^6))
+
+propdmgexp_conv
+cropdmgexp_conv
+```
+The following code processes the data in order to create two columns **propdmgexp2** and **cropdmgexp** with the correct codes according to the tables above. This factors are then converted in numbers and summed in the variable **totaldmg**, which represents the total damage in dollars to properties and crops.
+```{rEXP replacement}
+#create two new columns
+df$propdmgexp2 <- df$propdmgexp
+df$cropdmgexp2 <- df$cropdmgexp
+#replace the current codes with the correct codes according to the two tabbles above 
+levels(df$propdmgexp2) <- as.factor(propdmgexp_conv$output)
+levels(df$cropdmgexp2) <- as.factor(cropdmgexp_conv$output)
+#convert the factors to numbers
+df$propdmg_rv <- df$propdmg*as.integer(as.character(df$propdmgexp2))
+df$cropdmg_rv <- df$cropdmg*as.integer(as.character(df$cropdmgexp2))
+#add a variable with the total
+df$totaldmg <- df$propdmg_rv + df$cropdmg_rv
+head(df)
+```
 
 
+###Summary
 
+The two codes below prepare the summary for the plotting
+```{r Summary of fatalities}
+summary_fatalities <- aggregate(fatalities ~ evtype, df, FUN = sum)
+summary_fatalities <- head(arrange(summary_fatalities, desc(fatalities)), 10)
+summary_fatalities$evtype <- factor(summary_fatalities$evtype, 
+                                 levels = summary_fatalities$evtype[order(summary_fatalities$fatalities)])
+```
+
+```{r Summary of damage}
+summary_dmg <- aggregate(totaldmg ~ evtype, df, FUN = sum)
+summary_dmg <- head(arrange(summary_dmg, desc(totaldmg)), 10)
+summary_dmg$evtype <- factor(summary_dmg$evtype, 
+                                 levels = summary_dmg$evtype[order(summary_dmg$totaldmg)])
+```
+
+#Results
+
+###Across the United States, which types of events are most harmful with respect to population health?
+The following table and graph show the first ten weather events order by the number of fatalities. 
+```{rGraph2 Fatalities, fig.width=9}
+print(summary_fatalities)
+ggplot(summary_fatalities, aes(x = evtype, y = fatalities)) +
+      geom_bar(stat = "identity", fill = "tomato3") + 
+      labs(title = "Total number of fatalities per weather event", x = "Weather events", y = "Fatalities") +
+      coord_flip()
+```
+
+The three top events with the higher number of casualties are:
+
+```{r}
+head(summary_fatalities, 3)
+```
+###Across the United States, which types of events have the greatest economic consequences?
+The following table and graph show the first ten weather events order by total damage to properties and crops.
+
+```{rGraph3 Total damage, fig.width=9}
+print(data.frame(summary_dmg$evtype, totaldmg.dollars = format(summary_dmg$totaldmg, big.mark = ",")))
+ggplot(summary_dmg, aes(x = evtype, y = totaldmg)) +
+      geom_bar(fill = "lightgoldenrod4", stat = "identity") +
+      scale_y_continuous(labels = comma) +
+      labs(title = "Total damages in dollars per weather event", x = "Weather events", y = "Dollars") +
+      coord_flip()
+```
+
+The top three events with the higher damages to properties and crop are:
+
+```{r}
+head(data.frame(summary_dmg$evtype, totaldmg.dollars = format(summary_dmg$totaldmg, big.mark = ",")), 3)
+```
+
+The sum of the damage of the first three events rappresents a proportion of 
+
+```{r}
+sum(summary_dmg$totaldmg[1:4])/sum(summary_dmg$totaldmg)
+```
+
+of the total damage of the first 10 events.
+ 
