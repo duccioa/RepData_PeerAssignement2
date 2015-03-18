@@ -1,10 +1,20 @@
-##Load packages
-```{r Load packages}
+Weather events in the US:
+========================================
+The most harmfuls and the most damagings
+========================================
+The present analysis explores the U.S. National Oceanic and Atmospheric Administration's (NOAA) storm database, in order to answer the two following questions:
+1. Across the United States, which types of events are most harmful with respect to population health?
+2. Across the United States, which types of events have the greatest economic consequences?
+
+
+##Data Processing
+###Loading data and documentation
+```{r Loading packages, echo=FALSE}
 library(lubridate)
 library(dplyr)
 library(ggplot2)
 ```
-##Download data and documentation, create log file and load the data in R
+
 ```{r Download data and documentation, cache=TRUE}
 link_data <- "https://d396qusza40orc.cloudfront.net/repdata%2Fdata%2FStormData.csv.bz2"
 link_doc1 <- "https://d396qusza40orc.cloudfront.net/repdata%2Fpeer2_doc%2Fpd01016005curr.pdf"
@@ -38,22 +48,20 @@ if(!file.exists("./raw_data/StormDataFAQ.pdf")) {
       }
 ```
 
-##read the data
 ```{r Read the data, cache=TRUE}
 if(!exists("StormData")) {
       StormData <- read.csv(bzfile("./raw_data/StormData.csv.bz2"), stringsAsFactors = FALSE, header = TRUE)
       }
 
-rm(link, link_doc1, link_doc2, link_data)
+rm(link_doc1, link_doc2, link_data)
 ```
-
-
-##Pre-processing
-Check the headings of the original dataset
+###Working data
+First we read the headings of the original dataset
 ```{r Headings of the dataset}
 names(StormData)
 ```
-Select relevant columns
+The following code select the relevant variables from the dataset and creates the working dataset **df**.
+
 ```{r Select relevant columns, cache=TRUE}
 df <- with(StormData, 
            data.frame(state = STATE,
@@ -67,93 +75,520 @@ df <- with(StormData,
                       cropdmgexp = CROPDMGEXP,
                       remarks = REMARKS)
            )
+
 head(df)
 ```
 
-##analysis of the dataset
+###Processing
+####Event types: Evtype
 
-EVTYPE.txt is a list of the EVTTYPE taken from the documentation downloaded as StormDataDoc.pdf (p.6, table 1. Storm Data Event Table)
-```{r Analysis of the dataset, cache=TRUE}
-evtype_doc <- scan("./raw_data/EVTYPE.txt", what = "", sep = "\n")#read the list
-evtype_doc <- substr(evtype_doc, 1, nchar(evtype_doc) - 2)#remove the character "designator"
+In order to categorise the events, the documentation that comes with the dataset proposes 48 categories (**evtype**) of weather events (StormDataDoc.pdf, p.6, table 1. Storm Data Event Table).
+
+```{r Categories from the documentation}
+evtype_doc <- c("Astronomical Low Tide",
+"Avalanche",
+"Blizzard",
+"Coastal Flood",
+"Cold/Wind Chill",
+"Debris Flow",
+"Dense Fog",
+"Dense Smoke",
+"Drought",
+"Dust Devil",
+"Dust Storm",
+"Excessive Heat",
+"Extreme Cold/Wind Chill",
+"Flash Flood",
+"Flood",
+"Frost/Freeze",
+"Funnel Cloud",
+"Freezing Fog",
+"Hail",
+"Heat",
+"Heavy Rain",
+"Heavy Snow",
+"High Surf",
+"High Wind",
+"Hurricane (Typhoon)",
+"Ice Storm",
+"Lake-Effect Snow",
+"Lakeshore Flood",
+"Lightning",
+"Marine Hail",
+"Marine High Wind",
+"Marine Strong Wind",
+"Marine Thunderstorm Wind",
+"Rip Current",
+"Seiche",
+"Sleet",
+"Storm Surge/Tide",
+"Strong Wind",
+"Thunderstorm Wind",
+"Tornado",
+"Tropical Depression",
+"Tropical Storm",
+"Tsunami",
+"Volcanic Ash",
+"Waterspout",
+"Wildfire",
+"Winter Storm",
+"Winter Weather")
+```
+
+The data, insetad, presents more than 900 evtype categories
+
+```{r}
 evtype_data <- as.character(levels(df$evtype))
-```
-The difference between EVTYPE's categories of the documentation and the data
-```{r}
 cbind(EVTYPE.DOCUMENTATION = length(evtype_doc), EVTYPE.DATA = length(levels(df$evtype)))
-print(evtype_doc)
-print(evtype_data)
 ```
 
-The following code uses the function clean_evtype to create a dataframe. The function takes an external list saved as csv, as input. The list has two columns :the first one contains text strings to be used as grep in the evtype column of the data, the second indicates the correspondant category of the 48 defined in the documentation. 
-To compile this list, I first simply used the 48 categories as grep and then I refined it in further iteration of the function clean_evtype(). It contains some redundant lines as it was compiled by further refinement, without changing the existing. 
-The list was compiled using a spreadsheet editor and saved in csv and it is  included in the repository with the present code.
+The following code creates the dataframe **evtype_clean** with two columns: the first (**evtype**) corresponds to the categories from the data and the second one (**output**) corresponds to the relative categories from the documentation.
+The output variable is created by performing the following grep functions on the first one and add the new variable in the relevant rows. 
+This list of patterns has been created by first using the 48 documentation's categories and then manually refining until the wanted result was achieved.
 
-```{r}
-clean_evtype <- function(subject = "evtype_data", condition_list = "conditions.csv") {
-      cond <- read.csv(condition_list, stringsAsFactors = FALSE, header = TRUE, sep = ";")#condition_list is the link to a list containing a column of conditions for the grep and a columns with the relative transformation to a factor of the list EVTYPE.txt
-      evtype_clean <- data.frame(evtype = evtype_data, output = NA, stringsAsFactors = FALSE)
-      for(i in 1:length(cond$grep)) {
-            index <- grep(cond$grep[i], evtype_clean$evtype, ignore.case = TRUE)
-            if(length(index > 0)) {
-                  for(z in 1:length(index)) {
-                        evtype_clean$output[index[z]] <- cond$output[i]     
-                  }
-                  
-            }
-      }
-      for(i in 1:length(evtype_clean$output)) {
-            evtype_clean$output[is.na(evtype_clean$output)] <- "Other"
-      }
-      evtype_clean$evtype <- as.factor(evtype_clean$evtype)
-      evtype_clean$output <- as.factor(evtype_clean$output)
-      evtype_clean <<- evtype_clean
-      write.table(evtype_clean, "evtype_clean.csv")
-}
+```{r Clean evtypes}
+#create a dataframe with the categories from the data and a column "output", with only NAs values
+evtype_clean <- data.frame(evtype = evtype_data, output = NA, stringsAsFactors = FALSE)
+#use the 48 categories of the documentation as pattern for grep
+#a category "Summary" to include some entries in the data that are not specific and are noted as summary with a date
+evtype_clean$output[grep("Summary", evtype_clean$evtype, ignore.case = TRUE)]<- "Summary"
+evtype_clean$output[grep("Astronomical Low Tide", evtype_clean$evtype, ignore.case = TRUE)]<- "Astronomical Low Tide"
+evtype_clean$output[grep("Avalanche", evtype_clean$evtype, ignore.case = TRUE)]<- "Avalanche"
+evtype_clean$output[grep("Blizzard", evtype_clean$evtype, ignore.case = TRUE)]<- "Blizzard"
+evtype_clean$output[grep("Coastal Flood", evtype_clean$evtype, ignore.case = TRUE)]<- "Coastal Flood"
+evtype_clean$output[grep("Cold Wind Chill", evtype_clean$evtype, ignore.case = TRUE)]<- "Cold Wind Chill"
+evtype_clean$output[grep("Debris Flow", evtype_clean$evtype, ignore.case = TRUE)]<- "Debris Flow"
+evtype_clean$output[grep("Dense Fog", evtype_clean$evtype, ignore.case = TRUE)]<- "Dense Fog"
+evtype_clean$output[grep("Dense Smoke", evtype_clean$evtype, ignore.case = TRUE)]<- "Dense Smoke"
+evtype_clean$output[grep("Drought", evtype_clean$evtype, ignore.case = TRUE)]<- "Drought"
+evtype_clean$output[grep("Dust Devil", evtype_clean$evtype, ignore.case = TRUE)]<- "Dust Devil"
+evtype_clean$output[grep("Dust Storm", evtype_clean$evtype, ignore.case = TRUE)]<- "Dust Storm"
+evtype_clean$output[grep("Excessive Heat", evtype_clean$evtype, ignore.case = TRUE)]<- "Excessive Heat"
+evtype_clean$output[grep("Extreme Cold Wind Chill", evtype_clean$evtype, ignore.case = TRUE)]<- "Extreme Cold Wind Chill"
+evtype_clean$output[grep("Flash Flood", evtype_clean$evtype, ignore.case = TRUE)]<- "Flash Flood"
+evtype_clean$output[grep("Flood", evtype_clean$evtype, ignore.case = TRUE)]<- "Flood"
+evtype_clean$output[grep("Frost Freeze", evtype_clean$evtype, ignore.case = TRUE)]<- "Frost Freeze"
+evtype_clean$output[grep("Funnel Cloud", evtype_clean$evtype, ignore.case = TRUE)]<- "Funnel Cloud"
+evtype_clean$output[grep("Freezing Fog", evtype_clean$evtype, ignore.case = TRUE)]<- "Freezing Fog"
+evtype_clean$output[grep("Hail", evtype_clean$evtype, ignore.case = TRUE)]<- "Hail"
+evtype_clean$output[grep("Heat", evtype_clean$evtype, ignore.case = TRUE)]<- "Heat"
+evtype_clean$output[grep("Heavy Rain", evtype_clean$evtype, ignore.case = TRUE)]<- "Heavy Rain"
+evtype_clean$output[grep("Heavy Snow", evtype_clean$evtype, ignore.case = TRUE)]<- "Heavy Snow"
+evtype_clean$output[grep("High Surf", evtype_clean$evtype, ignore.case = TRUE)]<- "High Surf"
+evtype_clean$output[grep("High Wind", evtype_clean$evtype, ignore.case = TRUE)]<- "High Wind"
+evtype_clean$output[grep("Hurricane  Typhoon ", evtype_clean$evtype, ignore.case = TRUE)]<- "Hurricane  Typhoon "
+evtype_clean$output[grep("Ice Storm", evtype_clean$evtype, ignore.case = TRUE)]<- "Ice Storm"
+evtype_clean$output[grep("Lake-Effect Snow", evtype_clean$evtype, ignore.case = TRUE)]<- "Lake-Effect Snow"
+evtype_clean$output[grep("Lakeshore Flood", evtype_clean$evtype, ignore.case = TRUE)]<- "Lakeshore Flood"
+evtype_clean$output[grep("Lightning", evtype_clean$evtype, ignore.case = TRUE)]<- "Lightning"
+evtype_clean$output[grep("Marine Hail", evtype_clean$evtype, ignore.case = TRUE)]<- "Marine Hail"
+evtype_clean$output[grep("Marine High Wind", evtype_clean$evtype, ignore.case = TRUE)]<- "Marine High Wind"
+evtype_clean$output[grep("Marine Strong Wind", evtype_clean$evtype, ignore.case = TRUE)]<- "Marine Strong Wind"
+evtype_clean$output[grep("Marine Thunderstorm Wind", evtype_clean$evtype, ignore.case = TRUE)]<- "Marine Thunderstorm Wind"
+evtype_clean$output[grep("Rip Current", evtype_clean$evtype, ignore.case = TRUE)]<- "Rip Current"
+evtype_clean$output[grep("Seiche", evtype_clean$evtype, ignore.case = TRUE)]<- "Seiche"
+evtype_clean$output[grep("Sleet", evtype_clean$evtype, ignore.case = TRUE)]<- "Sleet"
+evtype_clean$output[grep("Storm Surge Tide", evtype_clean$evtype, ignore.case = TRUE)]<- "Storm Surge Tide"
+evtype_clean$output[grep("Strong Wind", evtype_clean$evtype, ignore.case = TRUE)]<- "Strong Wind"
+evtype_clean$output[grep("Thunderstorm Wind", evtype_clean$evtype, ignore.case = TRUE)]<- "Thunderstorm Wind"
+evtype_clean$output[grep("Tornado", evtype_clean$evtype, ignore.case = TRUE)]<- "Tornado"
+evtype_clean$output[grep("Tropical Depression", evtype_clean$evtype, ignore.case = TRUE)]<- "Tropical Depression"
+evtype_clean$output[grep("Tropical Storm", evtype_clean$evtype, ignore.case = TRUE)]<- "Tropical Storm"
+evtype_clean$output[grep("Tsunami", evtype_clean$evtype, ignore.case = TRUE)]<- "Tsunami"
+evtype_clean$output[grep("Volcanic Ash", evtype_clean$evtype, ignore.case = TRUE)]<- "Volcanic Ash"
+evtype_clean$output[grep("Waterspout", evtype_clean$evtype, ignore.case = TRUE)]<- "Waterspout"
+evtype_clean$output[grep("Wildfire", evtype_clean$evtype, ignore.case = TRUE)]<- "Wildfire"
+evtype_clean$output[grep("Winter Storm", evtype_clean$evtype, ignore.case = TRUE)]<- "Winter Storm"
+evtype_clean$output[grep("Winter Weather", evtype_clean$evtype, ignore.case = TRUE)]<- "Winter Weather"
 
+evtype_clean$output[grep("landslide", evtype_clean$evtype, ignore.case = TRUE)]<- "Avalanche"
+evtype_clean$output[grep("landslides", evtype_clean$evtype, ignore.case = TRUE)]<- "Avalanche"
+evtype_clean$output[grep("landspout", evtype_clean$evtype, ignore.case = TRUE)]<- "Avalanche"
+evtype_clean$output[grep("landslump", evtype_clean$evtype, ignore.case = TRUE)]<- "Avalanche"
+evtype_clean$output[grep("wind", evtype_clean$evtype, ignore.case = TRUE)]<- "Cold/Wind Chill"
+evtype_clean$output[grep("warmth", evtype_clean$evtype, ignore.case = TRUE)]<- "Heat"
+evtype_clean$output[grep("hot", evtype_clean$evtype, ignore.case = TRUE)]<- "Heat"
+evtype_clean$output[grep("dry", evtype_clean$evtype, ignore.case = TRUE)]<- "Drought"
+evtype_clean$output[grep("below normal", evtype_clean$evtype, ignore.case = TRUE)]<- "Drought"
+evtype_clean$output[grep("driest", evtype_clean$evtype, ignore.case = TRUE)]<- "Drought"
+evtype_clean$output[grep("dryness", evtype_clean$evtype, ignore.case = TRUE)]<- "Drought"
+evtype_clean$output[grep("snow", evtype_clean$evtype, ignore.case = TRUE)]<- "Heavy Snow"
+evtype_clean$output[grep("snows", evtype_clean$evtype, ignore.case = TRUE)]<- "Heavy Snow"
+evtype_clean$output[grep("snowfall", evtype_clean$evtype, ignore.case = TRUE)]<- "Heavy Snow"
+evtype_clean$output[grep("blowing-snow", evtype_clean$evtype, ignore.case = TRUE)]<- "Heavy Snow"
+evtype_clean$output[grep("freeze", evtype_clean$evtype, ignore.case = TRUE)]<- "Frost/Freeze"
+evtype_clean$output[grep("cool", evtype_clean$evtype, ignore.case = TRUE)]<- "Frost/Freeze"
+evtype_clean$output[grep("frost", evtype_clean$evtype, ignore.case = TRUE)]<- "Frost/Freeze"
+evtype_clean$output[grep("cold", evtype_clean$evtype, ignore.case = TRUE)]<- "Frost/Freeze"
+evtype_clean$output[grep("glaze", evtype_clean$evtype, ignore.case = TRUE)]<- "Frost/Freeze"
+evtype_clean$output[grep("ice", evtype_clean$evtype, ignore.case = TRUE)]<- "Frost/Freeze"
+evtype_clean$output[grep("low temperature", evtype_clean$evtype, ignore.case = TRUE)]<- "Frost/Freeze"
+evtype_clean$output[grep("beach", evtype_clean$evtype, ignore.case = TRUE)]<- "Coastal Flood"
+evtype_clean$output[grep("devel", evtype_clean$evtype, ignore.case = TRUE)]<- "Dust Storm"
+evtype_clean$output[grep("flash", evtype_clean$evtype, ignore.case = TRUE)]<- "Flash Flood"
+evtype_clean$output[grep("flashflooding", evtype_clean$evtype, ignore.case = TRUE)]<- "Flash Flood"
+evtype_clean$output[grep("high tide", evtype_clean$evtype, ignore.case = TRUE)]<- "Storm Surge/Tide"
+evtype_clean$output[grep("blow-out", evtype_clean$evtype, ignore.case = TRUE)]<- "Storm Surge/Tide"
+evtype_clean$output[grep("windchill", evtype_clean$evtype, ignore.case = TRUE)]<- "Cold/Wind Chill"
+evtype_clean$output[grep("wind chill", evtype_clean$evtype, ignore.case = TRUE)]<- "Cold/Wind Chill"
+evtype_clean$output[grep("wind chills", evtype_clean$evtype, ignore.case = TRUE)]<- "Cold/Wind Chill"
+evtype_clean$output[grep("fire", evtype_clean$evtype, ignore.case = TRUE)]<- "Wildfire"
+evtype_clean$output[grep("fires", evtype_clean$evtype, ignore.case = TRUE)]<- "Wildfire"
+evtype_clean$output[grep("Coastal flooding", evtype_clean$evtype, ignore.case = TRUE)]<- "Coastal Flood"
+evtype_clean$output[grep("coastal flood", evtype_clean$evtype, ignore.case = TRUE)]<- "Coastal Flood"
+evtype_clean$output[grep("coastal erosion", evtype_clean$evtype, ignore.case = TRUE)]<- "Coastal Flood"
+evtype_clean$output[grep("cstl flooding", evtype_clean$evtype, ignore.case = TRUE)]<- "Coastal Flood"
+evtype_clean$output[grep("coastal storm", evtype_clean$evtype, ignore.case = TRUE)]<- "Marine Strong Wind"
+evtype_clean$output[grep("coastalstorm", evtype_clean$evtype, ignore.case = TRUE)]<- "Marine Strong Wind"
+evtype_clean$output[grep("precipitation", evtype_clean$evtype, ignore.case = TRUE)]<- "Heavy Rain"
+evtype_clean$output[grep("precipatation", evtype_clean$evtype, ignore.case = TRUE)]<- "Heavy Rain"
+evtype_clean$output[grep("precip", evtype_clean$evtype, ignore.case = TRUE)]<- "Heavy Rain"
+evtype_clean$output[grep("rainfall", evtype_clean$evtype, ignore.case = TRUE)]<- "Heavy Rain"
+evtype_clean$output[grep("shower", evtype_clean$evtype, ignore.case = TRUE)]<- "Heavy Rain"
+evtype_clean$output[grep("showers", evtype_clean$evtype, ignore.case = TRUE)]<- "Heavy Rain"
+evtype_clean$output[grep("rainstorm", evtype_clean$evtype, ignore.case = TRUE)]<- "Heavy Rain"
+evtype_clean$output[grep("fog", evtype_clean$evtype, ignore.case = TRUE)]<- "Dense Fog"
+evtype_clean$output[grep("gustnado", evtype_clean$evtype, ignore.case = TRUE)]<- "Tornado"
+evtype_clean$output[grep("surf", evtype_clean$evtype, ignore.case = TRUE)]<- "High Surf"
+evtype_clean$output[grep("high winds", evtype_clean$evtype, ignore.case = TRUE)]<- "High Wind"
+evtype_clean$output[grep("hurricane", evtype_clean$evtype, ignore.case = TRUE)]<- "Hurricane (Typhoon)"
+evtype_clean$output[grep("ligthing", evtype_clean$evtype, ignore.case = TRUE)]<- "Lightning"
+evtype_clean$output[grep("ligntning", evtype_clean$evtype, ignore.case = TRUE)]<- "Lightning"
+evtype_clean$output[grep("mudslide", evtype_clean$evtype, ignore.case = TRUE)]<- "Debris Flow"
+evtype_clean$output[grep("mudslides", evtype_clean$evtype, ignore.case = TRUE)]<- "Debris Flow"
+evtype_clean$output[grep("thunderstorm", evtype_clean$evtype, ignore.case = TRUE)]<- "Thunderstorm Wind"
+evtype_clean$output[grep("thunderstorms", evtype_clean$evtype, ignore.case = TRUE)]<- "Thunderstorm Wind"
+evtype_clean$output[grep("thundeerstorm", evtype_clean$evtype, ignore.case = TRUE)]<- "Thunderstorm Wind"
+evtype_clean$output[grep("thundersnow", evtype_clean$evtype, ignore.case = TRUE)]<- "Thunderstorm Wind"
+evtype_clean$output[grep("tstm", evtype_clean$evtype, ignore.case = TRUE)]<- "Thunderstorm Wind"
+evtype_clean$output[grep("tstmw", evtype_clean$evtype, ignore.case = TRUE)]<- "Thunderstorm Wind"
+evtype_clean$output[grep("small", evtype_clean$evtype, ignore.case = TRUE)]<- "Flood"
+evtype_clean$output[grep("urban", evtype_clean$evtype, ignore.case = TRUE)]<- "Flood"
+evtype_clean$output[grep("Volcanic", evtype_clean$evtype, ignore.case = TRUE)]<- "Volcanic Ash"
+evtype_clean$output[grep("water spout", evtype_clean$evtype, ignore.case = TRUE)]<- "Waterspout"
+evtype_clean$output[grep("wayterspout", evtype_clean$evtype, ignore.case = TRUE)]<- "Waterspout"
+evtype_clean$output[grep("wintery", evtype_clean$evtype, ignore.case = TRUE)]<- "Winter Weather"
+evtype_clean$output[grep("wintry", evtype_clean$evtype, ignore.case = TRUE)]<- "Winter Weather"
+evtype_clean$output[grep("flash floooding", evtype_clean$evtype, ignore.case = TRUE)]<- "Flash Flood"
+evtype_clean$output[grep("flash flood", evtype_clean$evtype, ignore.case = TRUE)]<- "Flash Flood"
+evtype_clean$output[grep("FLOOD FLOOD/FLASH", evtype_clean$evtype, ignore.case = TRUE)]<- "Flash Flood"
+evtype_clean$output[grep("FLOOD/FLASH", evtype_clean$evtype, ignore.case = TRUE)]<- "Flash Flood"
+evtype_clean$output[grep("FLOOD/FLASH FLOOD", evtype_clean$evtype, ignore.case = TRUE)]<- "Flash Flood"
+evtype_clean$output[grep("FLOOD/FLASH FLOODING", evtype_clean$evtype, ignore.case = TRUE)]<- "Flash Flood"
+evtype_clean$output[grep("FLOOD/FLASH/FLOOD", evtype_clean$evtype, ignore.case = TRUE)]<- "Flash Flood"
+evtype_clean$output[grep("FLOOD/FLASHFLOOD", evtype_clean$evtype, ignore.case = TRUE)]<- "Flash Flood"
+evtype_clean$output[grep("avalace", evtype_clean$evtype, ignore.case = TRUE)]<- "Avalanche"
+evtype_clean$output[grep("beach", evtype_clean$evtype, ignore.case = TRUE)]<- "Coastal Flood"
+evtype_clean$output[grep("below normal", evtype_clean$evtype, ignore.case = TRUE)]<- "Drought"
+evtype_clean$output[grep("blizzard", evtype_clean$evtype, ignore.case = TRUE)]<- "Blizzard"
+evtype_clean$output[grep("dust", evtype_clean$evtype, ignore.case = TRUE)]<- "Dust Storm"
+evtype_clean$output[grep("coastal flooding", evtype_clean$evtype, ignore.case = TRUE)]<- "Coastal Flood"
+evtype_clean$output[grep("coastal flood", evtype_clean$evtype, ignore.case = TRUE)]<- "Coastal Flood"
+evtype_clean$output[grep("tidal flood", evtype_clean$evtype, ignore.case = TRUE)]<- "Coastal Flood"
+evtype_clean$output[grep("coastalflood", evtype_clean$evtype, ignore.case = TRUE)]<- "Coastal Flood"
+evtype_clean$output[grep("cstl flooding", evtype_clean$evtype, ignore.case = TRUE)]<- "Coastal Flood"
+evtype_clean$output[grep("cstl flood", evtype_clean$evtype, ignore.case = TRUE)]<- "Coastal Flood"
+evtype_clean$output[grep("cold/winds", evtype_clean$evtype, ignore.case = TRUE)]<- "Cold/Wind Chill"
+evtype_clean$output[grep("downburst", evtype_clean$evtype, ignore.case = TRUE)]<- "Cold/Wind Chill"
+evtype_clean$output[grep("drought", evtype_clean$evtype, ignore.case = TRUE)]<- "Drought"
+evtype_clean$output[grep("dust storm", evtype_clean$evtype, ignore.case = TRUE)]<- "Dust Storm"
+evtype_clean$output[grep("duststorm", evtype_clean$evtype, ignore.case = TRUE)]<- "Dust Storm"
+evtype_clean$output[grep("microburst", evtype_clean$evtype, ignore.case = TRUE)]<- "High Wind"
+evtype_clean$output[grep("rain", evtype_clean$evtype, ignore.case = TRUE)]<- "Heavy Rain"
+evtype_clean$output[grep("wetness", evtype_clean$evtype, ignore.case = TRUE)]<- "Heavy Rain"
+evtype_clean$output[grep("wet", evtype_clean$evtype, ignore.case = TRUE)]<- "Heavy Rain"
+evtype_clean$output[grep("Flood & heavy rain", evtype_clean$evtype, ignore.case = TRUE)]<- "Flood"
+evtype_clean$output[grep("FREEZING DRIZZLE", evtype_clean$evtype, ignore.case = TRUE)]<- "Frost/Freeze"
+evtype_clean$output[grep("FREEZING DRIZZLE AND FREEZING", evtype_clean$evtype, ignore.case = TRUE)]<- "Frost/Freeze"
+evtype_clean$output[grep("funnel", evtype_clean$evtype, ignore.case = TRUE)]<- "Funnel Cloud"
+evtype_clean$output[grep("funnels", evtype_clean$evtype, ignore.case = TRUE)]<- "Funnel Cloud"
+evtype_clean$output[grep("Flood/Strong Wind", evtype_clean$evtype, ignore.case = TRUE)]<- "Flood"
+evtype_clean$output[grep("Freezing Rain", evtype_clean$evtype, ignore.case = TRUE)]<- "Frost/Freeze"
+evtype_clean$output[grep("Freezing Spray", evtype_clean$evtype, ignore.case = TRUE)]<- "Frost/Freeze"
+evtype_clean$output[grep("Freezing drizzle", evtype_clean$evtype, ignore.case = TRUE)]<- "Frost/Freeze"
+evtype_clean$output[grep("Freezing rain", evtype_clean$evtype, ignore.case = TRUE)]<- "Frost/Freeze"
+evtype_clean$output[grep("Freezing Drizzle", evtype_clean$evtype, ignore.case = TRUE)]<- "Frost/Freeze"
+evtype_clean$output[grep("HEAVY RAIN/LIGHTNING", evtype_clean$evtype, ignore.case = TRUE)]<- "Heavy Rain"
+evtype_clean$output[grep("HEAVY SNOW AND HIGH WINDS", evtype_clean$evtype, ignore.case = TRUE)]<- "Heavy Snow"
+evtype_clean$output[grep("HEAVY SNOW AND STRONG WINDS", evtype_clean$evtype, ignore.case = TRUE)]<- "Heavy Snow"
+evtype_clean$output[grep("HEAVY SNOW/HIGH WIND", evtype_clean$evtype, ignore.case = TRUE)]<- "Heavy Snow"
+evtype_clean$output[grep("HEAVY SNOW/HIGH WINDS", evtype_clean$evtype, ignore.case = TRUE)]<- "Heavy Snow"
+evtype_clean$output[grep("HEAVY SNOW/HIGH WINDS & FLOOD", evtype_clean$evtype, ignore.case = TRUE)]<- "Heavy Snow"
+evtype_clean$output[grep("HEAVY SNOW/HIGH WINDS/FREEZING", evtype_clean$evtype, ignore.case = TRUE)]<- "Heavy Snow"
+evtype_clean$output[grep("HEAVY SNOW/ICE", evtype_clean$evtype, ignore.case = TRUE)]<- "Heavy Snow"
+evtype_clean$output[grep("HEAVY SNOW/ICE STORM", evtype_clean$evtype, ignore.case = TRUE)]<- "Heavy Snow"
+evtype_clean$output[grep("HEAVY SNOW/SLEET", evtype_clean$evtype, ignore.case = TRUE)]<- "Heavy Snow"
+evtype_clean$output[grep("HEAVY SNOW/SQUALLS", evtype_clean$evtype, ignore.case = TRUE)]<- "Heavy Snow"
+evtype_clean$output[grep("HEAVY SNOW/WIND", evtype_clean$evtype, ignore.case = TRUE)]<- "Heavy Snow"
+evtype_clean$output[grep("HEAVY SNOW/WINTER STORM", evtype_clean$evtype, ignore.case = TRUE)]<- "Heavy Snow"
+evtype_clean$output[grep("HEAVY SNOWPACK", evtype_clean$evtype, ignore.case = TRUE)]<- "Heavy Snow"
+evtype_clean$output[grep("HEAVY SURF COASTAL FLOODING", evtype_clean$evtype, ignore.case = TRUE)]<- "High Surf"
+evtype_clean$output[grep("HIGH  SWELLS", evtype_clean$evtype, ignore.case = TRUE)]<- "High Surf"
+evtype_clean$output[grep("HIGH SEAS", evtype_clean$evtype, ignore.case = TRUE)]<- "High Surf"
+evtype_clean$output[grep("HIGH TEMPERATURE RECORD", evtype_clean$evtype, ignore.case = TRUE)]<- "Heat"
+evtype_clean$output[grep("HIGH WATER", evtype_clean$evtype, ignore.case = TRUE)]<- "Storm Surge/Tide"
+evtype_clean$output[grep("HIGH WAVES", evtype_clean$evtype, ignore.case = TRUE)]<- "High Surf"
+evtype_clean$output[grep("HOT/DRY PATTERN", evtype_clean$evtype, ignore.case = TRUE)]<- "Heat"
+evtype_clean$output[grep("HURRICANE OPAL/HIGH WINDS", evtype_clean$evtype, ignore.case = TRUE)]<- "Hurricane (Typhoon)"
+evtype_clean$output[grep("HVY RAIN", evtype_clean$evtype, ignore.case = TRUE)]<- "Heavy Rain"
+evtype_clean$output[grep("Heavy Rain/High Surf", evtype_clean$evtype, ignore.case = TRUE)]<- "Heavy Rain"
+evtype_clean$output[grep("ICE/STRONG WINDS", evtype_clean$evtype, ignore.case = TRUE)]<- "Frost/Freeze"
+evtype_clean$output[grep("ICY ROADS", evtype_clean$evtype, ignore.case = TRUE)]<- "Frost/Freeze"
+evtype_clean$output[grep("LACK OF SNOW", evtype_clean$evtype, ignore.case = TRUE)]<- "Lake-Effect Snow"
+evtype_clean$output[grep("LAKE EFFECT SNOW", evtype_clean$evtype, ignore.case = TRUE)]<- "Lake-Effect Snow"
+evtype_clean$output[grep("LAKE FLOOD", evtype_clean$evtype, ignore.case = TRUE)]<- "Lakeshore Flood"
+evtype_clean$output[grep("LAKESHORE FLOOD", evtype_clean$evtype, ignore.case = TRUE)]<- "Lakeshore Flood"
+evtype_clean$output[grep("LANDSLIDE/URBAN FLOOD", evtype_clean$evtype, ignore.case = TRUE)]<- "Avalanche"
+evtype_clean$output[grep("LARGE WALL CLOUD", evtype_clean$evtype, ignore.case = TRUE)]<- "Dense Fog"
+evtype_clean$output[grep("LIGHT FREEZING RAIN", evtype_clean$evtype, ignore.case = TRUE)]<- "Frost/Freeze"
+evtype_clean$output[grep("LIGHT SNOW", evtype_clean$evtype, ignore.case = TRUE)]<- "Frost/Freeze"
+evtype_clean$output[grep("LIGHT SNOW/FREEZING PRECIP", evtype_clean$evtype, ignore.case = TRUE)]<- "Frost/Freeze"
+evtype_clean$output[grep("LIGHTING", evtype_clean$evtype, ignore.case = TRUE)]<- "Lightning"
+evtype_clean$output[grep("LIGNTNING", evtype_clean$evtype, ignore.case = TRUE)]<- "Lightning"
+evtype_clean$output[grep("LOCAL FLASH FLOOD", evtype_clean$evtype, ignore.case = TRUE)]<- "Flash Flood"
+evtype_clean$output[grep("Lake Effect Snow", evtype_clean$evtype, ignore.case = TRUE)]<- "Lake-Effect Snow"
+evtype_clean$output[grep("Light snow", evtype_clean$evtype, ignore.case = TRUE)]<- "Frost/Freeze"
+evtype_clean$output[grep("Light Snow", evtype_clean$evtype, ignore.case = TRUE)]<- "Frost/Freeze"
+evtype_clean$output[grep("Light Snow/Flurries", evtype_clean$evtype, ignore.case = TRUE)]<- "Frost/Freeze"
+evtype_clean$output[grep("Light Snowfall", evtype_clean$evtype, ignore.case = TRUE)]<- "Frost/Freeze"
+evtype_clean$output[grep("Light snow", evtype_clean$evtype, ignore.case = TRUE)]<- "Frost/Freeze"
+evtype_clean$output[grep("MARINE STRONG WIND", evtype_clean$evtype, ignore.case = TRUE)]<- "Marine High Wind"
+evtype_clean$output[grep("MARINE THUNDERSTORM WIND", evtype_clean$evtype, ignore.case = TRUE)]<- "Marine Thunderstorm Wind"
+evtype_clean$output[grep("MARINE TSTM WIND", evtype_clean$evtype, ignore.case = TRUE)]<- "Marine Thunderstorm Wind"
+evtype_clean$output[grep("MUD SLIDE", evtype_clean$evtype, ignore.case = TRUE)]<- "Debris Flow"
+evtype_clean$output[grep("MUD SLIDES", evtype_clean$evtype, ignore.case = TRUE)]<- "Debris Flow"
+evtype_clean$output[grep("MUD/ROCK SLIDE", evtype_clean$evtype, ignore.case = TRUE)]<- "Debris Flow"
+evtype_clean$output[grep("NON TSTM WIND", evtype_clean$evtype, ignore.case = TRUE)]<- "High Wind"
+evtype_clean$output[grep("NON-SEVERE WIND DAMAGE", evtype_clean$evtype, ignore.case = TRUE)]<- "High Wind"
+evtype_clean$output[grep("PROLONGED RAIN", evtype_clean$evtype, ignore.case = TRUE)]<- "Heavy Rain"
+evtype_clean$output[grep("RAPIDLY RISING WATER", evtype_clean$evtype, ignore.case = TRUE)]<- "Storm Surge/Tide"
+evtype_clean$output[grep("RECORD COLD AND HIGH WIND", evtype_clean$evtype, ignore.case = TRUE)]<- "Frost/Freeze"
+evtype_clean$output[grep("RECORD HIGH", evtype_clean$evtype, ignore.case = TRUE)]<- "Heat"
+evtype_clean$output[grep("RECORD HIGH TEMPERATURE", evtype_clean$evtype, ignore.case = TRUE)]<- "Heat"
+evtype_clean$output[grep("RECORD HIGH TEMPERATURES", evtype_clean$evtype, ignore.case = TRUE)]<- "Heat"
+evtype_clean$output[grep("RECORD SNOW/COLD", evtype_clean$evtype, ignore.case = TRUE)]<- "Heavy Rain"
+evtype_clean$output[grep("RECORD TEMPERATURE", evtype_clean$evtype, ignore.case = TRUE)]<- "Heat"
+evtype_clean$output[grep("RECORD TEMPERATURES", evtype_clean$evtype, ignore.case = TRUE)]<- "Heat"
+evtype_clean$output[grep("RECORD WARM", evtype_clean$evtype, ignore.case = TRUE)]<- "Heat"
+evtype_clean$output[grep("RECORD WARM TEMPS.", evtype_clean$evtype, ignore.case = TRUE)]<- "Heat"
+evtype_clean$output[grep("ROCK SLIDE", evtype_clean$evtype, ignore.case = TRUE)]<- "Avalanche"
+evtype_clean$output[grep("ROGUE WAVE", evtype_clean$evtype, ignore.case = TRUE)]<- "High Surf"
+evtype_clean$output[grep("ROUGH SEAS", evtype_clean$evtype, ignore.case = TRUE)]<- "High Surf"
+evtype_clean$output[grep("Record High", evtype_clean$evtype, ignore.case = TRUE)]<- "High Wind"
+evtype_clean$output[grep("Record Temperatures", evtype_clean$evtype, ignore.case = TRUE)]<- "Heat"
+evtype_clean$output[grep("SAHARAN DUST", evtype_clean$evtype, ignore.case = TRUE)]<- "Dust Storm"
+evtype_clean$output[grep("SEVERE TURBULENCE", evtype_clean$evtype, ignore.case = TRUE)]<- "High Wind"
+evtype_clean$output[grep("SMOKE", evtype_clean$evtype, ignore.case = TRUE)]<- "Wildfire"
+evtype_clean$output[grep("SNOW AND COLD", evtype_clean$evtype, ignore.case = TRUE)]<- "Heavy Snow"
+evtype_clean$output[grep("SNOW AND HEAVY SNOW", evtype_clean$evtype, ignore.case = TRUE)]<- "Heavy Snow"
+evtype_clean$output[grep("SNOW AND ICE", evtype_clean$evtype, ignore.case = TRUE)]<- "Heavy Snow"
+evtype_clean$output[grep("SNOW AND ICE STORM", evtype_clean$evtype, ignore.case = TRUE)]<- "Heavy Snow"
+evtype_clean$output[grep("SNOW AND SLEET", evtype_clean$evtype, ignore.case = TRUE)]<- "Heavy Snow"
+evtype_clean$output[grep("SNOW AND WIND", evtype_clean$evtype, ignore.case = TRUE)]<- "Heavy Snow"
+evtype_clean$output[grep("SNOW DROUGHT", evtype_clean$evtype, ignore.case = TRUE)]<- "Heavy Snow"
+evtype_clean$output[grep("SNOW FREEZING RAIN", evtype_clean$evtype, ignore.case = TRUE)]<- "Heavy Snow"
+evtype_clean$output[grep("SNOW SHOWERS", evtype_clean$evtype, ignore.case = TRUE)]<- "Heavy Snow"
+evtype_clean$output[grep("SNOW SLEET", evtype_clean$evtype, ignore.case = TRUE)]<- "Heavy Snow"
+evtype_clean$output[grep("SNOW SQUALL", evtype_clean$evtype, ignore.case = TRUE)]<- "Heavy Snow"
+evtype_clean$output[grep("SNOW SQUALLS", evtype_clean$evtype, ignore.case = TRUE)]<- "Heavy Snow"
+evtype_clean$output[grep("SNOW- HIGH WIND- WIND CHILL", evtype_clean$evtype, ignore.case = TRUE)]<- "Heavy Snow"
+evtype_clean$output[grep("SNOW/ BITTER COLD", evtype_clean$evtype, ignore.case = TRUE)]<- "Heavy Snow"
+evtype_clean$output[grep("SNOW/ ICE", evtype_clean$evtype, ignore.case = TRUE)]<- "Heavy Snow"
+evtype_clean$output[grep("SNOW/BLOWING SNOW", evtype_clean$evtype, ignore.case = TRUE)]<- "Heavy Snow"
+evtype_clean$output[grep("SNOW/COLD", evtype_clean$evtype, ignore.case = TRUE)]<- "Heavy Snow"
+evtype_clean$output[grep("SNOW/FREEZING RAIN", evtype_clean$evtype, ignore.case = TRUE)]<- "Heavy Snow"
+evtype_clean$output[grep("SNOW/HEAVY SNOW", evtype_clean$evtype, ignore.case = TRUE)]<- "Heavy Snow"
+evtype_clean$output[grep("SNOW/HIGH WINDS", evtype_clean$evtype, ignore.case = TRUE)]<- "Heavy Snow"
+evtype_clean$output[grep("SNOW/ICE", evtype_clean$evtype, ignore.case = TRUE)]<- "Heavy Snow"
+evtype_clean$output[grep("SNOW/ICE STORM", evtype_clean$evtype, ignore.case = TRUE)]<- "Heavy Snow"
+evtype_clean$output[grep("SNOW/RAIN", evtype_clean$evtype, ignore.case = TRUE)]<- "Heavy Snow"
+evtype_clean$output[grep("SNOW/RAIN/SLEET", evtype_clean$evtype, ignore.case = TRUE)]<- "Heavy Snow"
+evtype_clean$output[grep("SNOW/SLEET", evtype_clean$evtype, ignore.case = TRUE)]<- "Heavy Snow"
+evtype_clean$output[grep("SNOW/SLEET/FREEZING RAIN", evtype_clean$evtype, ignore.case = TRUE)]<- "Heavy Snow"
+evtype_clean$output[grep("SNOW/SLEET/RAIN", evtype_clean$evtype, ignore.case = TRUE)]<- "Heavy Snow"
+evtype_clean$output[grep("SNOWFALL RECORD", evtype_clean$evtype, ignore.case = TRUE)]<- "Heavy Snow"
+evtype_clean$output[grep("SNOWMELT FLOODING", evtype_clean$evtype, ignore.case = TRUE)]<- "Heavy Snow"
+evtype_clean$output[grep("SNOWSTORM", evtype_clean$evtype, ignore.case = TRUE)]<- "Heavy Snow"
+evtype_clean$output[grep("SNOW\\COLD", evtype_clean$evtype, ignore.case = TRUE)]<- "Heavy Snow"
+evtype_clean$output[grep("STORM FORCE WINDS", evtype_clean$evtype, ignore.case = TRUE)]<- "High Wind"
+evtype_clean$output[grep("STORM SURGE", evtype_clean$evtype, ignore.case = TRUE)]<- "Storm Surge/Tide"
+evtype_clean$output[grep("STORM SURGE/TIDE", evtype_clean$evtype, ignore.case = TRUE)]<- "Storm Surge/Tide"
+evtype_clean$output[grep("Sml Stream Fld", evtype_clean$evtype, ignore.case = TRUE)]<- "Flood"
+evtype_clean$output[grep("TORNDAO", evtype_clean$evtype, ignore.case = TRUE)]<- "Tornado"
+evtype_clean$output[grep("TORRENTIAL RAIN", evtype_clean$evtype, ignore.case = TRUE)]<- "Heavy Rain"
+evtype_clean$output[grep("TSTM HEAVY RAIN", evtype_clean$evtype, ignore.case = TRUE)]<- "Thunderstorm Wind"
+evtype_clean$output[grep("TUNDERSTORM WIND", evtype_clean$evtype, ignore.case = TRUE)]<- "Thunderstorm Wind"
+evtype_clean$output[grep("TYPHOON", evtype_clean$evtype, ignore.case = TRUE)]<- "Hurricane (Typhoon)"
+evtype_clean$output[grep("Temperature record", evtype_clean$evtype, ignore.case = TRUE)]<- "Heat"
+evtype_clean$output[grep("UNSEASONABLY WARM", evtype_clean$evtype, ignore.case = TRUE)]<- "Heat"
+evtype_clean$output[grep("UNSEASONABLY WARM & WET", evtype_clean$evtype, ignore.case = TRUE)]<- "Heat"
+evtype_clean$output[grep("UNSEASONABLY WARM AND DRY", evtype_clean$evtype, ignore.case = TRUE)]<- "Heat"
+evtype_clean$output[grep("UNSEASONABLY WARM YEAR", evtype_clean$evtype, ignore.case = TRUE)]<- "Heat"
+evtype_clean$output[grep("UNSEASONABLY WARM/WET", evtype_clean$evtype, ignore.case = TRUE)]<- "Heat"
+evtype_clean$output[grep("UNSEASONABLY WET", evtype_clean$evtype, ignore.case = TRUE)]<- "Heavy Rain"
+evtype_clean$output[grep("UNSEASONAL RAIN", evtype_clean$evtype, ignore.case = TRUE)]<- "Heavy Rain"
+evtype_clean$output[grep("UNSEASONAL LOW TEMP", evtype_clean$evtype, ignore.case = TRUE)]<- "Frost/Freeze"
+evtype_clean$output[grep("UNUSUALLY WARM", evtype_clean$evtype, ignore.case = TRUE)]<- "Heat"
+evtype_clean$output[grep("avalance", evtype_clean$evtype, ignore.case = TRUE)]<- "Avalanche"
+evtype_clean$output[grep("blizzard", evtype_clean$evtype, ignore.case = TRUE)]<- "Blizzard"
+evtype_clean$output[grep("COASTAL  FLOODING/EROSION", evtype_clean$evtype, ignore.case = TRUE)]<- "Coastal Flood"
+evtype_clean$output[grep("COASTAL SURGE", evtype_clean$evtype, ignore.case = TRUE)]<- "Storm Surge/Tide"
+evtype_clean$output[grep("COLD AIR TORNADO", evtype_clean$evtype, ignore.case = TRUE)]<- "Tornado"
+evtype_clean$output[grep("COLD AND WET CONDITIONS", evtype_clean$evtype, ignore.case = TRUE)]<- "Frost/Freeze"
+evtype_clean$output[grep("COOL AND WET", evtype_clean$evtype, ignore.case = TRUE)]<- "Frost/Freeze"
+evtype_clean$output[grep("DAM BREAK", evtype_clean$evtype, ignore.case = TRUE)]<- "Flood"
+evtype_clean$output[grep("DAM FAILURE", evtype_clean$evtype, ignore.case = TRUE)]<- "Flood"
+evtype_clean$output[grep("DOWNBURST", evtype_clean$evtype, ignore.case = TRUE)]<- "High Wind"
+evtype_clean$output[grep("DOWNBURST WINDS", evtype_clean$evtype, ignore.case = TRUE)]<- "High Wind"
+evtype_clean$output[grep("Dust Devil", evtype_clean$evtype, ignore.case = TRUE)]<- "Dust Devil"
+evtype_clean$output[grep("FLOOD/RAIN/WIND", evtype_clean$evtype, ignore.case = TRUE)]<- "Flood"
+evtype_clean$output[grep("FLOOD/RAIN/WINDS", evtype_clean$evtype, ignore.case = TRUE)]<- "Flood"
+evtype_clean$output[grep("FLOODING/HEAVY RAIN", evtype_clean$evtype, ignore.case = TRUE)]<- "Flood"
+evtype_clean$output[grep("GRADIENT WIND", evtype_clean$evtype, ignore.case = TRUE)]<- "High Wind"
+evtype_clean$output[grep("GRADIENT WINDS", evtype_clean$evtype, ignore.case = TRUE)]<- "High Wind"
+evtype_clean$output[grep("GUSTY LAKE WIND", evtype_clean$evtype, ignore.case = TRUE)]<- "High Wind"
+evtype_clean$output[grep("GUSTY WIND", evtype_clean$evtype, ignore.case = TRUE)]<- "High Wind"
+evtype_clean$output[grep("GUSTY WIND/HAIL", evtype_clean$evtype, ignore.case = TRUE)]<- "High Wind"
+evtype_clean$output[grep("GUSTY WIND/HVY RAIN", evtype_clean$evtype, ignore.case = TRUE)]<- "High Wind"
+evtype_clean$output[grep("GUSTY WINDS", evtype_clean$evtype, ignore.case = TRUE)]<- "High Wind"
+evtype_clean$output[grep("Gradient wind", evtype_clean$evtype, ignore.case = TRUE)]<- "High Wind"
+evtype_clean$output[grep("Gusty Wind", evtype_clean$evtype, ignore.case = TRUE)]<- "High Wind"
+evtype_clean$output[grep("Gusty Winds", evtype_clean$evtype, ignore.case = TRUE)]<- "High Wind"
+evtype_clean$output[grep("Gusty wind/rain", evtype_clean$evtype, ignore.case = TRUE)]<- "High Wind"
+evtype_clean$output[grep("Gusty winds", evtype_clean$evtype, ignore.case = TRUE)]<- "High Wind"
+evtype_clean$output[grep("HAIL/ICY ROADS", evtype_clean$evtype, ignore.case = TRUE)]<- "Hail"
+evtype_clean$output[grep("HAIL/WIND", evtype_clean$evtype, ignore.case = TRUE)]<- "Hail"
+evtype_clean$output[grep("HAIL/WINDS", evtype_clean$evtype, ignore.case = TRUE)]<- "Hail"
+evtype_clean$output[grep("HAILSTORM", evtype_clean$evtype, ignore.case = TRUE)]<- "Hail"
+evtype_clean$output[grep("HAILSTORMS", evtype_clean$evtype, ignore.case = TRUE)]<- "Hail"
+evtype_clean$output[grep("HEAVY SNOW   FREEZING RAIN", evtype_clean$evtype, ignore.case = TRUE)]<- "Heavy Snow"
+evtype_clean$output[grep("HEAVY SNOW & ICE", evtype_clean$evtype, ignore.case = TRUE)]<- "Heavy Snow"
+evtype_clean$output[grep("HEAVY SNOW/BLIZZARD", evtype_clean$evtype, ignore.case = TRUE)]<- "Heavy Snow"
+evtype_clean$output[grep("HEAVY SNOW/BLIZZARD/AVALANCHE", evtype_clean$evtype, ignore.case = TRUE)]<- "Heavy Snow"
+evtype_clean$output[grep("HEAVY SWELLS", evtype_clean$evtype, ignore.case = TRUE)]<- "High Surf"
+evtype_clean$output[grep("HIGH  WINDS", evtype_clean$evtype, ignore.case = TRUE)]<- "High Wind"
+evtype_clean$output[grep("HIGH WIND", evtype_clean$evtype, ignore.case = TRUE)]<- "High Wind"
+evtype_clean$output[grep("HIGH WIND (G40)", evtype_clean$evtype, ignore.case = TRUE)]<- "High Wind"
+evtype_clean$output[grep("HIGH WIND 48", evtype_clean$evtype, ignore.case = TRUE)]<- "High Wind"
+evtype_clean$output[grep("HIGH WIND 63", evtype_clean$evtype, ignore.case = TRUE)]<- "High Wind"
+evtype_clean$output[grep("HIGH WIND 70", evtype_clean$evtype, ignore.case = TRUE)]<- "High Wind"
+evtype_clean$output[grep("HIGH WIND AND HEAVY SNOW", evtype_clean$evtype, ignore.case = TRUE)]<- "High Wind"
+evtype_clean$output[grep("HIGH WIND AND HIGH TIDES", evtype_clean$evtype, ignore.case = TRUE)]<- "High Wind"
+evtype_clean$output[grep("HIGH WIND AND SEAS", evtype_clean$evtype, ignore.case = TRUE)]<- "High Wind"
+evtype_clean$output[grep("HIGH WIND DAMAGE", evtype_clean$evtype, ignore.case = TRUE)]<- "High Wind"
+evtype_clean$output[grep("HIGH WIND/ BLIZZARD", evtype_clean$evtype, ignore.case = TRUE)]<- "High Wind"
+evtype_clean$output[grep("HIGH WIND/BLIZZARD", evtype_clean$evtype, ignore.case = TRUE)]<- "High Wind"
+evtype_clean$output[grep("HIGH WIND/BLIZZARD/FREEZING RA", evtype_clean$evtype, ignore.case = TRUE)]<- "High Wind"
+evtype_clean$output[grep("HIGH WIND/HEAVY SNOW", evtype_clean$evtype, ignore.case = TRUE)]<- "High Wind"
+evtype_clean$output[grep("HIGH WIND/LOW WIND CHILL", evtype_clean$evtype, ignore.case = TRUE)]<- "High Wind"
+evtype_clean$output[grep("HIGH WIND/SEAS", evtype_clean$evtype, ignore.case = TRUE)]<- "High Wind"
+evtype_clean$output[grep("HIGH WIND/WIND CHILL", evtype_clean$evtype, ignore.case = TRUE)]<- "High Wind"
+evtype_clean$output[grep("HIGH WIND/WIND CHILL/BLIZZARD", evtype_clean$evtype, ignore.case = TRUE)]<- "High Wind"
+evtype_clean$output[grep("HIGH WINDS", evtype_clean$evtype, ignore.case = TRUE)]<- "High Wind"
+evtype_clean$output[grep("HIGH WINDS 55", evtype_clean$evtype, ignore.case = TRUE)]<- "High Wind"
+evtype_clean$output[grep("HIGH WINDS 57", evtype_clean$evtype, ignore.case = TRUE)]<- "High Wind"
+evtype_clean$output[grep("HIGH WINDS 58", evtype_clean$evtype, ignore.case = TRUE)]<- "High Wind"
+evtype_clean$output[grep("HIGH WINDS 63", evtype_clean$evtype, ignore.case = TRUE)]<- "High Wind"
+evtype_clean$output[grep("HIGH WINDS 66", evtype_clean$evtype, ignore.case = TRUE)]<- "High Wind"
+evtype_clean$output[grep("HIGH WINDS 67", evtype_clean$evtype, ignore.case = TRUE)]<- "High Wind"
+evtype_clean$output[grep("HIGH WINDS 73", evtype_clean$evtype, ignore.case = TRUE)]<- "High Wind"
+evtype_clean$output[grep("HIGH WINDS 76", evtype_clean$evtype, ignore.case = TRUE)]<- "High Wind"
+evtype_clean$output[grep("HIGH WINDS 80", evtype_clean$evtype, ignore.case = TRUE)]<- "High Wind"
+evtype_clean$output[grep("HIGH WINDS 82", evtype_clean$evtype, ignore.case = TRUE)]<- "High Wind"
+evtype_clean$output[grep("HIGH WINDS AND WIND CHILL", evtype_clean$evtype, ignore.case = TRUE)]<- "High Wind"
+evtype_clean$output[grep("HIGH WINDS DUST STORM", evtype_clean$evtype, ignore.case = TRUE)]<- "High Wind"
+evtype_clean$output[grep("HIGH WINDS HEAVY RAINS", evtype_clean$evtype, ignore.case = TRUE)]<- "High Wind"
+evtype_clean$output[grep("HIGH WINDS/", evtype_clean$evtype, ignore.case = TRUE)]<- "High Wind"
+evtype_clean$output[grep("HIGH WINDS/COASTAL FLOOD", evtype_clean$evtype, ignore.case = TRUE)]<- "High Wind"
+evtype_clean$output[grep("HIGH WINDS/COLD", evtype_clean$evtype, ignore.case = TRUE)]<- "High Wind"
+evtype_clean$output[grep("HIGH WINDS/FLOODING", evtype_clean$evtype, ignore.case = TRUE)]<- "High Wind"
+evtype_clean$output[grep("HIGH WINDS/HEAVY RAIN", evtype_clean$evtype, ignore.case = TRUE)]<- "High Wind"
+evtype_clean$output[grep("HIGH WINDS/SNOW", evtype_clean$evtype, ignore.case = TRUE)]<- "High Wind"
+evtype_clean$output[grep("HYPERTHERMIA/EXPOSURE", evtype_clean$evtype, ignore.case = TRUE)]<- "Frost/Freeze"
+evtype_clean$output[grep("HYPOTHERMIA", evtype_clean$evtype, ignore.case = TRUE)]<- "Frost/Freeze"
+evtype_clean$output[grep("HYPOTHERMIA/EXPOSURE", evtype_clean$evtype, ignore.case = TRUE)]<- "Frost/Freeze"
+evtype_clean$output[grep("Heavy snow shower", evtype_clean$evtype, ignore.case = TRUE)]<- "Heavy Snow"
+evtype_clean$output[grep("Hypothermia/Exposure", evtype_clean$evtype, ignore.case = TRUE)]<- "Frost/Freeze"
+evtype_clean$output[grep("ICE STORM/FLASH FLOOD", evtype_clean$evtype, ignore.case = TRUE)]<- "Frost/Freeze"
+evtype_clean$output[grep("LAKE-EFFECT SNOW", evtype_clean$evtype, ignore.case = TRUE)]<- "Lake-Effect Snow"
+evtype_clean$output[grep("LIGHT SNOW AND SLEET", evtype_clean$evtype, ignore.case = TRUE)]<- "Sleet"
+evtype_clean$output[grep("LIGHTNING AND HEAVY RAIN", evtype_clean$evtype, ignore.case = TRUE)]<- "Lightning"
+evtype_clean$output[grep("LIGHTNING AND THUNDERSTORM WIN", evtype_clean$evtype, ignore.case = TRUE)]<- "Lightning"
+evtype_clean$output[grep("LIGHTNING AND WINDS", evtype_clean$evtype, ignore.case = TRUE)]<- "Lightning"
+evtype_clean$output[grep("LIGHTNING/HEAVY RAIN", evtype_clean$evtype, ignore.case = TRUE)]<- "Lightning"
+evtype_clean$output[grep("LOW TEMPERATURE RECORD", evtype_clean$evtype, ignore.case = TRUE)]<- "Frost/Freeze"
+evtype_clean$output[grep("MARINE HIGH WIND", evtype_clean$evtype, ignore.case = TRUE)]<- "Marine High Wind"
+evtype_clean$output[grep("RECORD LOW", evtype_clean$evtype, ignore.case = TRUE)]<- "Frost/Freeze"
+evtype_clean$output[grep("RECORD LOW RAINFALL", evtype_clean$evtype, ignore.case = TRUE)]<- "Frost/Freeze"
+evtype_clean$output[grep("SLEET & FREEZING RAIN", evtype_clean$evtype, ignore.case = TRUE)]<- "Sleet"
+evtype_clean$output[grep("SLEET STORM", evtype_clean$evtype, ignore.case = TRUE)]<- "Sleet"
+evtype_clean$output[grep("SLEET/FREEZING RAIN", evtype_clean$evtype, ignore.case = TRUE)]<- "Sleet"
+evtype_clean$output[grep("SLEET/ICE STORM", evtype_clean$evtype, ignore.case = TRUE)]<- "Sleet"
+evtype_clean$output[grep("SLEET/RAIN/SNOW", evtype_clean$evtype, ignore.case = TRUE)]<- "Sleet"
+evtype_clean$output[grep("SLEET/SNOW", evtype_clean$evtype, ignore.case = TRUE)]<- "Sleet"
+evtype_clean$output[grep("SNOW\\COLD", evtype_clean$evtype, ignore.case = TRUE)]<- "Heavy Snow"
+evtype_clean$output[grep("STRONG WIND", evtype_clean$evtype, ignore.case = TRUE)]<- "High Wind"
+evtype_clean$output[grep("STRONG WIND GUST", evtype_clean$evtype, ignore.case = TRUE)]<- "High Wind"
+evtype_clean$output[grep("STRONG WINDS", evtype_clean$evtype, ignore.case = TRUE)]<- "High Wind"
+evtype_clean$output[grep("Small Hail", evtype_clean$evtype, ignore.case = TRUE)]<- "Hail"
+evtype_clean$output[grep("Strong Wind", evtype_clean$evtype, ignore.case = TRUE)]<- "High Wind"
+evtype_clean$output[grep("Strong Winds", evtype_clean$evtype, ignore.case = TRUE)]<- "High Wind"
+evtype_clean$output[grep("Strong winds", evtype_clean$evtype, ignore.case = TRUE)]<- "High Wind"
+evtype_clean$output[grep("THUDERSTORM WINDS", evtype_clean$evtype, ignore.case = TRUE)]<- "Thunderstorm Wind"
+evtype_clean$output[grep("THUNDERESTORM WINDS", evtype_clean$evtype, ignore.case = TRUE)]<- "Thunderstorm Wind"
+evtype_clean$output[grep("THUNDERSTORM WINDS FUNNEL CLOU", evtype_clean$evtype, ignore.case = TRUE)]<- "Thunderstorm Wind"
+evtype_clean$output[grep("THUNDERSTORM WINDS HEAVY RAIN", evtype_clean$evtype, ignore.case = TRUE)]<- "Thunderstorm Wind"
+evtype_clean$output[grep("THUNDERSTORM WINDS SMALL STREA", evtype_clean$evtype, ignore.case = TRUE)]<- "Thunderstorm Wind"
+evtype_clean$output[grep("THUNDERSTORM WINDS URBAN FLOOD", evtype_clean$evtype, ignore.case = TRUE)]<- "Thunderstorm Wind"
+evtype_clean$output[grep("THUNDERSTORM WINDS/FLASH FLOOD", evtype_clean$evtype, ignore.case = TRUE)]<- "Thunderstorm Wind"
+evtype_clean$output[grep("THUNDERSTORM WINDS/FUNNEL CLOU", evtype_clean$evtype, ignore.case = TRUE)]<- "Thunderstorm Wind"
+evtype_clean$output[grep("THUNDERSTORM WINDS/HEAVY RAIN", evtype_clean$evtype, ignore.case = TRUE)]<- "Thunderstorm Wind"
+evtype_clean$output[grep("THUNDERSTROM WIND", evtype_clean$evtype, ignore.case = TRUE)]<- "Thunderstorm Wind"
+evtype_clean$output[grep("THUNDERSTROM WINDS", evtype_clean$evtype, ignore.case = TRUE)]<- "Thunderstorm Wind"
+evtype_clean$output[grep("THUNDERTORM WINDS", evtype_clean$evtype, ignore.case = TRUE)]<- "Thunderstorm Wind"
+evtype_clean$output[grep("THUNDERTSORM WIND", evtype_clean$evtype, ignore.case = TRUE)]<- "Thunderstorm Wind"
+evtype_clean$output[grep("THUNDESTORM WINDS", evtype_clean$evtype, ignore.case = TRUE)]<- "Thunderstorm Wind"
+evtype_clean$output[grep("THUNERSTORM WINDS", evtype_clean$evtype, ignore.case = TRUE)]<- "Thunderstorm Wind"
+evtype_clean$output[grep("TORNADO/WATERSPOUT", evtype_clean$evtype, ignore.case = TRUE)]<- "Tornado"
+evtype_clean$output[grep("TORNADOES, TSTM WIND, HAIL", evtype_clean$evtype, ignore.case = TRUE)]<- "Tornado"
+evtype_clean$output[grep("VERY WARM", evtype_clean$evtype, ignore.case = TRUE)]<- "Heat"
+evtype_clean$output[grep("WARM WEATHER", evtype_clean$evtype, ignore.case = TRUE)]<- "Heat"
+evtype_clean$output[grep("WIND ADVISORY", evtype_clean$evtype, ignore.case = TRUE)]<- "High Wind"
+evtype_clean$output[grep("WIND AND WAVE", evtype_clean$evtype, ignore.case = TRUE)]<- "High Wind"
+evtype_clean$output[grep("WIND DAMAGE", evtype_clean$evtype, ignore.case = TRUE)]<- "High Wind"
+evtype_clean$output[grep("WIND GUSTS", evtype_clean$evtype, ignore.case = TRUE)]<- "High Wind"
+evtype_clean$output[grep("WIND STORM", evtype_clean$evtype, ignore.case = TRUE)]<- "High Wind"
+evtype_clean$output[grep("WIND/HAIL", evtype_clean$evtype, ignore.case = TRUE)]<- "High Wind"
+evtype_clean$output[grep("WINTER STORM HIGH WINDS", evtype_clean$evtype, ignore.case = TRUE)]<- "Winter Storm"
+evtype_clean$output[grep("WINTER STORM/HIGH WIND", evtype_clean$evtype, ignore.case = TRUE)]<- "Winter Storm"
+evtype_clean$output[grep("WINTER STORM/HIGH WINDS", evtype_clean$evtype, ignore.case = TRUE)]<- "Winter Storm"
+evtype_clean$output[grep("small hail", evtype_clean$evtype, ignore.case = TRUE)]<- "Hail"
+evtype_clean$output[grep("NA", evtype_clean$evtype, ignore.case = TRUE)]<- "Others"
+
+
+evtype_clean$evtype <- as.factor(evtype_clean$evtype)
+evtype_clean$output <- as.factor(evtype_clean$output)
 ```
-The following list is then used to reassign the categories to the working dataframe df
+
+The following is a list showing how every category of the data has been replaced with a category from the documentation.
+
+
+
+```{r Table of replacement, fig.width=9}
+print(evtype_clean)
+```
+
+This list is used to reassign the categories to the working dataframe df
+
 ```{r}
-clean_evtype()
 levels(df$evtype) <- as.factor(evtype_clean$output)
+```
+
+The result are the following categories
+```{r}
 levels(df$evtype)
 ```
 
 
-```{r Summary fatalities}
-summary_harmful <- aggregate(fatalities ~ evtype, df, FUN = sum)
-summary_harmful <- cbind(summary_harmful, injuries = aggregate(injuries ~ evtype, df, FUN = sum)$injuries)
-summary_harmful <- arrange(summary_harmful, desc(fatalities))
-summary_harmful <- head(summary_harmful, 15)
-df_harmful <- df[df$evtype %in% summary_harmful$evtype,]
-factor_frequency <- summary(as.factor(as.character(df_harmful$evtype)))
-factor_frequency <- data.frame(evtype = names(factor_frequency), freq = factor_frequency)
-row.names(factor_frequency) <- NULL
-fatalities <- summary_harmful[,1:2]
-injuries <- arrange(summary_harmful[,c(1,3)], desc(injuries))
-
-
-#summary_harmful <- arrange(summary_harmful, as.character(evtype))
-#summary_harmful <- cbind(summary_harmful, frequency = factor_frequency$freq)
-#summary_harmful <- arrange(summary_harmful, desc(fatalities))
-print(fatalities)
-print(injuries)
-```
-
-```{r}
-fatalities$evtype <- factor(fatalities$evtype, 
-                                 levels = fatalities$evtype[order(fatalities$fatalities)])
-                                                                  
-injuries$evtype <- factor(injuries$evtype, 
-                                 levels = injuries$evtype[order(injuries$injuries)])
-                                                                  
-ggplot(fatalities, aes(x = evtype, y = fatalities)) +
-      geom_bar(stat = "identity", fill = "red") + 
-      coord_flip()
-ggplot(injuries, aes(x = evtype, y = injuries)) +
-      geom_bar(stat = "identity", fill = "blue") + 
-      coord_flip()
-
-```
 
 
