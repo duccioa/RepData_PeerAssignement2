@@ -106,7 +106,7 @@ ggplot(df, aes(x = as.factor(year(bgn_date)))) +
 ```
 **Graph1.**Number of observations by year.
 
-The number of observations from the year 1995 contututes 80% of the total:
+The number of observations from the year 1995 contututes 79% of the total:
 
 ```{r, fig.width=10}
 df_temp <- df %>% mutate(year = year(bgn_date)) %>% group_by(year) %>% summarize(count = n())
