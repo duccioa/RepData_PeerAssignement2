@@ -2,3 +2,4 @@ base
 lubridate
 dplyr
 ggplot2
+scales
